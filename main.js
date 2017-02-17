@@ -46,62 +46,53 @@ bot.on("message", msg => {
     //If the message is from a bot, ignore it
     if (a.bot) return;
 
+	//If the user is blacklisted ignore it
+	if (permissions.blacklist.users.includes(a.id) || arrShare(permissions.blacklist.roles, msg.member.roles.array())) return;
+
     //Here at Hero Inc we're Case Insensitive. we don't want any dirty capitals
     let command = msg.content.substring(1).split(" ")[0].toLowerCase();
 
-    //run the command if it exists, otherwise just chill
-    if (cmd[command] !== undefined) {
+	//Create an undefined variable
+	let canUse;
 
-        //Check to see if the command is voice only
-        if (cmd[command].voice) {
-            //check if the user issueing the command is in the same voice channel as the bot on the server the command was sent on.
-            if (msg.member.voiceChannel === undefined || bot.voiceConnections.get(msg.channel.guild.id) === undefined || msg.member.voiceChannel.id !== bot.voiceConnections.get(msg.channel.guild.id).channel.id) {
-                //Break from the event and tell the user they're useless
-                console.log(a.username + "#" + a.discriminator + " tried: " + command + " - Was not in the same voice channel");
-				if (cmd[command].deleteInvoking) {
-					msg.delete(config.deleteInvokingTime).catch(e => {console.log(e);});
-				}
-                return send(msg.channel, "This command can only be used when in a voice channel with the bot", {}, 5000);
+	//Check if the command exists
+	if (canUse === undefined && cmd[command] === undefined) {
+		canUse = "That command does not exist";
+	}
+
+	//Check if the command requires voice channel sharing
+	if (canUse === undefined && cmd[command].voice && (msg.member.voiceChannel === undefined || bot.voiceConnections.get(msg.channel.guild.id) === undefined || msg.member.voiceChannel.id !== bot.voiceConnections.get(msg.channel.guild.id).channel.id)) {
+		canUse = "Must be in the same voice channel as the bot to use this command";
+	}
+
+	//Check if user has permissions
+	if (canUse === undefined && !(a.id === config.ownerID || permissions.default.commands.includes(command) || permissions.admin.users.includes(a.id) || arrShare(permissions.admin.roles, msg.member.roles.array()))) {
+		//Iterate through all permissions and check to see if both the command and the user is in any group
+		let hasPerm = false;
+		for (let i = 3; i < permissions.length; i++) {
+			if (permissions[i].commands.includes(command) && (permissions[i].users.includes(a.id) || arrShare(permissions[i].roles, msg.member.roles.array()))) {
+                hasPerm = true;
             }
-        }
+		}
+		if (!hasPerm) {
+			canUse = "Does not have permissions";
+		}
+	}
 
-        let canUse = false;
-
-        //If theyre in the blacklist, ignore them
-        if (permissions.blacklist.users.includes(a.id) || arrShare(permissions.blacklist.roles, msg.member.roles.array())) {
-            return;
-
-            //If they are an admin or if the command is a default or they're the owner
-        } else if (a.id === config.ownerID || permissions.default.commands.includes(command) || permissions.admin.users.includes(a.id) || arrShare(permissions.admin.roles, msg.member.roles.array())) {
-            canUse = true;
-        }
-
-        //Iterate through all permissions and check to see if both the command and the user is in any group
-        let permIt = 3;
-        while (!canUse && permissions[permIt] !== undefined) {
-            if (permissions[permIt].commands.includes(command) && (permissions[permIt].users.includes(a.id) || arrShare(permissions[permIt].roles, msg.member.roles.array()))) {
-                canUse = true;
-            }
-            permIt++;
-        }
-
-        //Run the command if the user has permissions otherwise just chill
-        if (canUse) {
-            cmd[command].exe(bot, msg, ...msg.content.substring(1).split(" "));
-            console.log(a.username + "#" + a.discriminator + " used: " + command);
-        } else {
-            console.log(a.username + "#" + a.discriminator + " tried: " + command + " - Does not have permissions");
-            send(msg.channel, "Sorry, you don't have permission to use that command", {code: "Markdown"}, 5000);
-        }
-
-		//Delete the message if deleteInvoking for the command is set to true
+	//See if any of the checks above passed
+	if (canUse === undefined) {
+		//Run the command
+		cmd[command].exe(bot, msg, ...msg.content.substring(1).split(" "));
+		let d = new Date();
+		console.log("(" + d.getHours() + ":" + d.getMinutes() + ")" + " [" + a.username + "#" + a.discriminator + "] - success - " + msg.content);
 		if (cmd[command].deleteInvoking) {
 			msg.delete(config.deleteInvokingTime).catch(e => {console.log(e);});
 		}
-    } else {
-		//Hey thats not a real command
-        console.log(a.username + "#" + a.discriminator + " tried: " + command + " - Does not exist");
-    }
+	} else {
+		//Tell the user and the console that the command didn't work
+		send(msg.channel, "Command Failed: " + canUse, {code: true}, 0);
+		console.log("(" + d.getHours() + ":" + d.getMinutes() + ")" + " [" + a.username + "#" + a.discriminator + "] - failed - " + msg.content + " | " + canUse);
+	}
 });
 
 //If there is an error with the bot on the discord.js side, just log it to the console and continue working
