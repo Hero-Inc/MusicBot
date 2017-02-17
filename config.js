@@ -1,4 +1,3 @@
-/*jshint esversion: 6 */
 module.exports = {
 
 	//The secret token the bot uses to login
