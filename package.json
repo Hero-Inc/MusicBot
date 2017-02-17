@@ -1,0 +1,23 @@
+{
+  "name": "jennifer",
+  "version": "1.0.0",
+  "description": "A simple Discord Bot",
+  "main": "main.js",
+  "dependencies": {
+    "discord.js": "^11.0.0",
+    "googleapis": "^16.1.0",
+    "opusscript": "^0.0.1",
+    "ytdl-core": "^0.8.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "music"
+  ],
+  "author": "Heroj04 (jackrfootner@gmail.com)",
+  "license": "ISC"
+}
