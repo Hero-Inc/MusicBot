@@ -640,7 +640,7 @@ var commands = {
             send(msg.channel, compMsg, {code: true}, 10000);
         }
     },
-
+	/* These commands aren't working
     newgroup: {
         voice: false,
         deleteInvoking: true,
@@ -695,7 +695,7 @@ var commands = {
 
         }
     },
-
+	*/
 	roll: {
 		voice: false,
 		deleteInvoking: false,
