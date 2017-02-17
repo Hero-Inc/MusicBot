@@ -94,10 +94,12 @@ bot.on("message", msg => {
             send(msg.channel, "Sorry, you don't have permission to use that command", {code: "Markdown"}, 5000);
         }
 
+		//Delete the message if deleteInvoking for the command is set to true
 		if (cmd[command].deleteInvoking) {
 			msg.delete(config.deleteInvokingTime).catch(e => {console.log(e);});
 		}
     } else {
+		//Hey thats not a real command
         console.log(a.username + "#" + a.discriminator + " tried: " + command + " - Does not exist");
     }
 });

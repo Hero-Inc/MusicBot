@@ -1,5 +1,6 @@
 /*jshint esversion: 6*/
 module.exports = {
+	//message sending with auto delete
 	send: (channel, msg, options, life) => {
 		if (typeof(options) === "number") {
 			life = options;
@@ -14,6 +15,7 @@ module.exports = {
 	    });
 	},
 
+	//do two arrays share any values
 	arrShare: (target, search) => {
 	    return search.some(function(v) {
 	        return target.indexOf(v) >= 0;

@@ -11,7 +11,7 @@ module.exports = {
 		users: [],
 		roles: []
 	},
-	DJ: { //Can use all music based commands
+	dj: { //Can use all music based commands
 		commands: ["summon", "play", "playnext", "pause", "resume", "skip", "clear", "remove", "volume"],
 		users: [],
 		roles: []

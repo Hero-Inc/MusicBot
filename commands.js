@@ -10,12 +10,16 @@ const google = require("googleapis");
 const send = require("./lib.js").send;
 
 var permissions = require("./permissions.js");
+//To make a Youtube queries for getting playlist items
 var youtube = google.youtube({
     version: "v3",
     auth: "AIzaSyCLuDKIFxIljNvS1U9JJvBzvUZIZ3p7Ve8"
 });
 
 //The music queue, the property name is the guild id which links to arrays of video info
+//Also contains a next function which downloads the next song in the queue
+//and a play function which plays a file
+//Volume of the bot on each server is also stored in this object as 'vol<guildID>' (number between 0 and 1)
 var queue = require("./queue.js");
 
 /*
@@ -60,6 +64,7 @@ var commands = {
         shortHelp: "Make the bot repeat things",
         longHelp: "Enter words and phrases after the echo command to cause the bot to repeat those words and phrases in the channel.",
         exe: (bot, msg, ...args) => {
+			//Take the message, strip the command and send the result back
             if (args.length > 1) {
                 let words = args;
                 words.splice(0, 1);
@@ -117,6 +122,7 @@ var commands = {
             //Find the voice channel the command issuer is in
             let voiceChannel = msg.member.voiceChannel;
             let id = msg.channel.guild.id;
+			//Hey I can't be summoned to nowhere
             if (voiceChannel === undefined) {
                 return send(msg.channel, "You must be in a voice channel", 5000);
             }
@@ -151,14 +157,18 @@ var commands = {
 
                     if (args[1].includes("watch?v=")) {
                         //It's a video
+						//Get the video metadata
                         ytdl.getInfo(args[1], (err, info) => {
                             if (err) {
+								//uh oh that video didn't work
                                 send(msg.channel, "Error adding video: " + err, {code: true}, 20000);
                                 return console.log(err);
                             }
 
+							//Make sure the video isn't too long acording to our config
                             if (info.length_seconds <= config.maxVideoLength) {
 
+								//Should we queue it next or at the end
                                 if (msg.content.toLowerCase().includes("--playnext")) {
                                     //Add the video to the start of the queue (pos 0 if the queue is empty or pos 1 if not)
                                     queue[id].length > 0 ? queue[id].splice(1, 0, info) : queue[id].shift(info);
@@ -167,30 +177,38 @@ var commands = {
                                     queue[id].push(info);
                                 }
 
+								//It's in the queue
                                 send(msg.channel, "Enqueued " + info.title, 8000);
 
                                 //A new video has been added lets check if we should start downloading that
                                 if (queue[id].length === 1) {
 
+									//Lets take that metadata and get an audio file from it
                                     let video = ytdl.downloadFromInfo(queue[id][0], {
                                         filter: "audioonly"
                                     });
                                     let file = "";
 
+									//When the download starts
                                     video.on("info", (data) => {
+										//Pipe the audio to a file with no extension because I don't know how to work out the encoding and relevant extension
                                         file = path.join(__dirname + "/audioFiles/", data.title);
                                         console.log("Started download of " + queue[id][0].title);
                                         video.pipe(fs.createWriteStream(file));
                                     });
 
+									//Download success
                                     video.on("end", () => {
+										//Rename the file to have a .complete extension since it will still play fine and now I can differentiate between full and partial files
                                         console.log("Completed download of " + queue[id][0].title);
                                         let newFile = file + ".complete";
                                         fs.renameSync(file, newFile);
                                         queue.play(id, bot, newFile, msg);
                                     });
 
+									//The download failed
                                     video.on("error", (err) => {
+										//Skip this one then
                                         send(msg.channel, "There was an error downloading: " + queue[id][0].title, {code: true}, 5000);
                                         console.log(err);
                                         queue.next(id, bot, msg);
@@ -208,9 +226,10 @@ var commands = {
                         let plId = "";
                         let start = url.indexOf("?list=");
 
-                        //Make sure it actually has something here
+                        //Make sure it actually has the right format here
                         if (start > 0) {
                             plId = url.substring(start + 6);
+							//Get a list of all the videos in the playlist
                             youtube.playlistItems.list({
                                 part: "contentDetails",
                                 playlistId: plId,
@@ -225,11 +244,15 @@ var commands = {
                                 let pos = 0;
                                 //Add each video one by one to the queue
                                 results.items.forEach(element => {
+									//Get the video metadata
                                     ytdl.getInfo("www.youtube.com/watch?v=" + element.contentDetails.videoId, (err, info) => {
                                         if (err) {
                                             console.log(err);
                                         } else {
+											//Check if it exceeds our configured time limit
                                             if (info.length_seconds <= config.maxVideoLength) {
+												//add it to either the end of the queue or next in the queue
+												//This should maintain playlist order either way
                                                 if (msg.content.toLowerCase().includes("--playnext")) {
                                                     queue[id].splice(pos, 0, info);
                                                     pos++;
@@ -240,17 +263,20 @@ var commands = {
 
                                                 //If we just added the first video, start playing it
                                                 if (pos === 1 && sizeBefore === 0 && sizeBefore < queue[id].length) {
+													//take the metadata and get an audio file from it
                                                     let video = ytdl.downloadFromInfo(queue[id][0], {
                                                         filter: "audioonly"
                                                     });
                                                     let file = "";
 
+													//pipe the audio stream to a file
                                                     video.on("info", (data) => {
                                                         file = path.join(__dirname + "/audioFiles/", data.title);
                                                         console.log("Started download of " + queue[id][0].title);
                                                         video.pipe(fs.createWriteStream(file));
                                                     });
 
+													//rename the file to have a .complete extension and play it
                                                     video.on("end", () => {
                                                         console.log("Completed download of " + queue[id][0].title);
                                                         let newFile = file + ".complete";
@@ -258,6 +284,7 @@ var commands = {
                                                         queue.play(id, bot, newFile, msg);
                                                     });
 
+													//Just skip this song
                                                     video.on("error", (err) => {
                                                         send(msg.channel, "There was an error downloading: " + queue[id][0].title, {code: true}, 8000);
                                                         console.log(err);
@@ -268,8 +295,8 @@ var commands = {
                                         }
                                     });
                                 });
-
-                                send(msg.channel, "Added " + pos + " items from playlist", 5000);
+								//I wanted this to say after all videos have been added but getInfo is async and its looped so ¯\_(ツ)_/¯
+                                //send(msg.channel, "Added " + pos + " items from playlist", 5000);
                             });
                         }
 
@@ -279,13 +306,16 @@ var commands = {
                     }
                 } else if (args[1].includes("youtu.be")) {
                     //It's a shortened Youtube URL
+					//Get some video metadata
                     ytdl.getInfo(args[1], (err, info) => {
                         if (err) {
                             send(msg.channel, "Error adding video: " + err, {code: true}, 20000);
                             return console.log(err);
                         }
+						//Mkae sure video isn't too long
                         if (info.length_seconds < config.maxVideoLength) {
 
+							//next in queue or end of queue
                             if (msg.content.toLowerCase().includes("--playnext")) {
                                 //Add the video to the start of the queue
                                 queue[id].splice(1, 0, info);
@@ -299,17 +329,20 @@ var commands = {
                             //A new video has been added lets check if we should start downloading that
                             if (queue[id].length === 1) {
 
+								//Get some audio from the metadata
                                 let video = ytdl.downloadFromInfo(queue[id][0], {
                                     filter: "audioonly"
                                 });
                                 let file = "";
 
+								//pipe said audio to a file
                                 video.on("info", (data) => {
                                     file = path.join(__dirname + "/audioFiles/", data.title);
                                     console.log("Started download of " + queue[id][0].title);
                                     video.pipe(fs.createWriteStream(file));
                                 });
 
+								//Rename the file to have .complete extension and play file
                                 video.on("end", () => {
                                     console.log("Completed download of " + queue[id][0].title);
                                     let newFile = file + ".complete";
@@ -317,6 +350,7 @@ var commands = {
                                     queue.play(id, bot, newFile, msg);
                                 });
 
+								//Skip this song
                                 video.on("error", (err) => {
                                     send(msg.channel, "There was an error downloading: " + queue[id][0].title, {code: true}, 5000);
                                     console.log(err);
@@ -329,15 +363,17 @@ var commands = {
                     });
                 } else {
                     //It's either a search string or another website.
-                    //Tell the user we only do youtube
+					//Check to see if it is a url - Maybe I should make this better but ¯\_(ツ)_/¯
                     if (msg.content.toLowerCase().includes("://") || msg.content.toLowerCase().includes("www.")) {
                         return send(msg.channel, "Sorry, only youtube please", 5000);
                     }
 
+					//Get the search string
                     let search = args.splice(0, 1);
                     search = search.join(" ");
                     search = encodeURI(search);
 
+					//Use the youtube api to search for a single video using this search string and get it's ID
                     youtube.search.list({
                         part: "snippet",
                         maxResults: 1,
@@ -349,12 +385,15 @@ var commands = {
                             return console.log(err);
                         }
 
+						//Get some metadata for the returned video
                         ytdl.getInfo("www.youtube.com/watch?v=" + results.items[0].id.videoId, (err, info) => {
                             if (err) {
                                 send(msg.channel, "Error adding video", 8000);
                                 return console.log(err);
                             }
+							//Check if the video is too long
                             if (info.length_seconds < config.maxVideoLength) {
+								//next in queue or end of queue
                                 if (msg.content.toLowerCase().includes("--playnext")) {
                                     //Add the video to the start of the queue (pos 0 if the queue is empty or pos 1 if not)
                                     queue[id].length > 0 ? queue[id].splice(1, 0, info) : queue[id].shift(info);
@@ -368,17 +407,21 @@ var commands = {
                                 //A new video has been added lets check if we should start downloading that
                                 if (queue[id].length === 1) {
 
+									//audio from metadata
+									//I should really offload this to its own function
                                     let video = ytdl.downloadFromInfo(queue[id][0], {
                                         filter: "audioonly"
                                     });
                                     let file = "";
 
+									//pipe to file
                                     video.on("info", (data) => {
                                         file = path.join(__dirname + "/audioFiles/", data.title);
                                         console.log("Started download of " + queue[id][0].title);
                                         video.pipe(fs.createWriteStream(file));
                                     });
 
+									//rename and play file
                                     video.on("end", () => {
                                         console.log("Completed download of " + queue[id][0].title);
                                         let newFile = file + ".complete";
@@ -386,6 +429,7 @@ var commands = {
                                         queue.play(id, bot, newFile, msg);
                                     });
 
+									//skip errornous song
                                     video.on("error", (err) => {
                                         send(msg.channel, "There was an error downloading: " + queue[id][0].title, {code: true}, 8000);
                                         console.log(err);
@@ -412,10 +456,14 @@ var commands = {
         shortHelp: "sets the volume",
         longHelp: "Enter a number between 0 and 100 to set the volume to that percent.",
         exe: (bot, msg, ...args) => {
+			//it's gotta be a command and an argument
             if (args.length === 2) {
+				//make sure they entered a good number and no I'm not supporting 200% volume
                 let vol = Math.round(Number(args[1])) / 100;
                 if (vol >= 0 && vol <= 1) {
+					//Set the volume in the queue object for future streams
                     queue["vol" + msg.channel.guild.id] = vol;
+					//set the volume of the current stream if there is one
                     if (bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher !== undefined) {
                         bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher.setVolume(vol);
                     }
@@ -475,6 +523,7 @@ var commands = {
         shortHelp: "Skips the currently playing audio track",
         longHelp: "",
         exe: (bot, msg, ...args) => {
+			//if there is currently a stream playing, we just end it
             if (bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher === undefined) {
                 send(msg.channel, "You can only skip an item when I'm playing something", 8000);
             } else {
@@ -515,18 +564,15 @@ var commands = {
         exe: (bot, msg, ...args) => {
             let id = msg.channel.guild.id;
             if (queue[id].length > 1) {
+				//If they haven't entered any number set it to clear the whole queue
                 let start = typeof args[1] !== undefined ? Number(args[1]) : 1;
-                let end = typeof args[1] !== undefined ? Number(args[2]) : queue[id].length - 1;
+                let end = typeof args[2] !== undefined ? Number(args[2]) : queue[id].length - 1;
 
                 //Make sure that the numbers are correct and clear the queue
                 if (start > 0 && start < end && end > 0 && end < queue[id].length) {
                     queue[id].splice(start, end - start);
                     msg.channel.send("Queue Cleared");
                 } else {
-                    if (args.length === 1) {
-                        queue[id].splice(1, queue[id].length - 1);
-                        send(msg.channel, "Queue Cleared", 5000);
-                    }
                     send(msg.channel, "Please enter valid start/end numbers", 5000);
                 }
             } else {
@@ -545,6 +591,7 @@ var commands = {
             let id = msg.channel.guild.id;
             if (queue[id].length > 1) {
                 let num = Number(args[1]);
+				//Make sure they entered a good number and get rid of that item
                 if (!isNaN(num) && num > 0 && num < queue[id].length) {
                     queue[id].splice(num, 1);
                     send(msg.channel, "Removed item from queue", 5000);
@@ -569,7 +616,9 @@ var commands = {
                 let org = Number(args[1]);
                 let fin = Number(args[2]);
 
+				//Make sure the numbers they entered actually work
                 if (!isNaN(org) && !isNaN(fin) && org > 0 && fin > 0 && org < queue[id].length && fin < queue[id].length) {
+					//since we can't actually move items in an array we store them temporarily and add them in elsewhere
                     let hold = queue[id][org];
                     queue[id].splice(org, 1);
                     queue[id].splice(fin, 0, hold);
@@ -631,6 +680,7 @@ var commands = {
         shortHelp: "List all groups",
         longHelp: "",
         exe: (bot, msg, ...args) => {
+			//just iterate through all the groups and get their name
             let compMsg = "List of groups";
             for (var key in permissions) {
                 if (permissions.hasOwnProperty(key)) {
@@ -727,7 +777,9 @@ var commands = {
 		shortHelp: "Output saved messages",
 		longHelp: "Output a saved message with the corresponding tag name to the channel. Save new messages with addtag",
 		exe: (bot, msg, ...args) => {
+			//make sure they entered an argument
 			if (args.length === 2) {
+				//read the tags file
 				fs.readFile("tags.json", (err, data) => {
 					if (err) {
 						console.log(err);
@@ -736,12 +788,14 @@ var commands = {
 
 					let tags = JSON.parse(data);
 
+					//Check to see if there are any tags for this server
 					if (tags[msg.channel.guild.id] === undefined || tags[msg.channel.guild.id].length === 0) {
 						return send(msg.channel, "There are no tags on this server", 8000);
 					}
 
 					let tagname = args[1].toLowerCase();
 
+					//check if the argument they entered is a valid tag name, send the tag message if it is
 					if (tags[msg.channel.guild.id][tagname] !== undefined) {
 						send(msg.channel, tags[msg.channel.guild.id][tagname], 0);
 					} else {
@@ -761,7 +815,9 @@ var commands = {
 		shortHelp: "Save a message",
 		longHelp: "Associates a message with a tagname which can be recalled later with the tag command.",
 		exe: (bot, msg, ...args) => {
+			//make sure they entered at least a name and one word message
 			if (args.length > 2) {
+				//read the tags file
 				fs.readFile("tags.json", (err, data) => {
 					let tagname = args[1].toLowerCase();
 					if (err) {
@@ -771,18 +827,23 @@ var commands = {
 
 					let tags = JSON.parse(data);
 
+					//Create an object in the tags list for this server if one does not already exist
 					if (tags[msg.channel.guild.id] === undefined) {
 						tags[msg.channel.guild.id] = {};
 					}
 
+					//Check if this tag already exists
 					if (tags[msg.channel.guild.id][tagname] === undefined) {
 						//It doesnt exist, we can add it
+						//Get the message as a single string on it's own
 						let message = args;
 						message.splice(0,2);
 						message = message.join(" ");
 
+						//Add the message to this guilds tag list object
 						tags[msg.channel.guild.id][tagname] = message;
 
+						//Write the new tag list to the tags file including the new tag
 						fs.writeFile("tags.json", JSON.stringify(tags), (err) => {
 							if (err) {
 								console.log(err);
@@ -807,7 +868,9 @@ var commands = {
 		shortHelp: "Remove saved messages",
 		longHelp: "Removes a previously created tag.",
 		exe: (bot, msg, ...args) => {
+			//make sure we have a tagname
 			if (args.length === 2) {
+				//read the tags file
 				fs.readFile("tags.json", (err, data) => {
 					if (err) {
 						console.log(err);
@@ -816,16 +879,19 @@ var commands = {
 
 					let tags = JSON.parse(data);
 
+					//Check if there are any tags for this server
 					if (tags[msg.channel.guild.id] === undefined || tags[msg.channel.guild.id].length === 0) {
 						return send(msg.channel, "There are no tags on this server", 8000);
 					}
 
 					let tagname = args[1].toLowerCase();
 
+					//See if this tagname even exists on this server
 					if (tags[msg.channel.guild.id][tagname] !== undefined) {
 						//Remove it
 						delete tags[msg.channel.guild.id][tagname];
 
+						//write the new taglist with removed tag to the tags file
 						fs.writeFile("tags.json", JSON.stringify(tags), (err) => {
 							if (err) {
 								console.log(err);
@@ -850,14 +916,18 @@ var commands = {
 		shortHelp: "List all tags",
 		longHelp: "Produce a list of all previously saved tags",
 		exe: (bot, msg, ...args) => {
+			//read the tags file
 			fs.readFile("tags.json", (err, data) => {
 				if (err) {
 					console.log(err);
 					return send(msg.channel, "There was an error reading tags", 8000);
 				}
 				let tags = JSON.parse(data);
+				//Check if there are any tags on this server
 				if (tags[msg.channel.guild.id] !== undefined || tags[msg.channel.guild.id].length === 0) {
 					let message = "Tags available on this server: ";
+					//iterate through all the tags on this server and add them to the message to send
+					//This only goes over the keys i.e., the tagnames
 					Object.keys(tags[msg.channel.guild.id]).forEach(element => {
 						message += "\n - " + element;
 					});
