@@ -1,5 +1,3 @@
-/*jshint esversion: 6 */
-
 //Requires
 const Discord = require("discord.js");
 const config = require("./config.js");

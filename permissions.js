@@ -1,4 +1,3 @@
-/*jshint esversion: 6 */
 module.exports = {
 	admin: { //Full access
 		users: ["221509843616399360", "218959728368156674", "194389811660849152"],

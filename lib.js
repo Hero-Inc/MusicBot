@@ -1,4 +1,3 @@
-/*jshint esversion: 6*/
 module.exports = {
 	//message sending with auto delete
 	send: (channel, msg, options, life) => {

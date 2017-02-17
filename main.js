@@ -1,4 +1,3 @@
-/*jshint esversion: 6 */
 //Just to say the script has started
 console.log("Starting Bot");
 
@@ -49,7 +48,7 @@ bot.on("message", msg => {
 	//If the user is blacklisted ignore it
 	if (permissions.blacklist.users.includes(a.id) || arrShare(permissions.blacklist.roles, msg.member.roles.array())) return;
 
-    //Here at Hero Inc we're Case Insensitive. we don't want any dirty capitals
+    //Here at Hero Inc we're Case Insensitive. we don't want any dirty uppercase letters
     let command = msg.content.substring(1).split(" ")[0].toLowerCase();
 
 	//Create an undefined variable
