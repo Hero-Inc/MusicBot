@@ -11,32 +11,36 @@ queue = {
 	next: (id, bot, msg) => {
 		//Make sure theres actually another song to download
 		if (queue[id].length > 0) {
+			let file = path.join(__dirname + `/audioFiles/`, queue[id][0].title + `.complete`);
+			fs.access(file, err => {
+				if (err) {
+					//get some audio from some metadata
+					let video = ytdl.downloadFromInfo(queue[id][0], {filter: `audioonly`});
 
-			//get some audio from some metadata
-			let video = ytdl.downloadFromInfo(queue[id][0], {filter: `audioonly`});
-			let file = ``;
+					//pipe the audio into a file
+					video.on(`info`, (data) => {
+						console.log(`Started download of ` + queue[id][0].title);
+						let newFile = file.substring(0, (file.length - 9));
+						video.pipe(fs.createWriteStream(newFile));
+					});
 
-			//pipe the audio into a file
-			video.on(`info`, (data) => {
-				file = path.join(__dirname + `/audioFiles/`, data.title);
-				console.log(`Started download of ` + queue[id][0].title);
-				video.pipe(fs.createWriteStream(file));
-			});
+					//rename the file and play it
+					video.on(`end`, () => {
+						console.log(`Completed download of ` + queue[id][0].title);
+						fs.renameSync(newFile, file);
+						queue.play(id, bot, file, msg);
+					});
 
-			//rename the file and play it
-			video.on(`end`, () => {
-				console.log(`Completed download of ` + queue[id][0].title);
-				let newFile = file + `.complete`;
-				fs.renameSync(file, newFile);
-				queue.play(id, bot, newFile, msg);
-			});
-
-			//Skip this song
-			video.on(`error`, (err) => {
-				send(msg.channel, `There was an error downloading: ` + queue[id][0].title, 8000);
-				console.log(err);
-				queue.next(id, bot, msg);
-			});
+					//Skip this song
+					video.on(`error`, (err) => {
+						send(msg.channel, `There was an error downloading: ` + queue[id][0].title, 8000);
+						console.log(err);
+						queue.next(id, bot, msg);
+					});
+				} else {
+					queue.play(id, bot, file, msg)
+				}
+			})
 		}
 	},
 
