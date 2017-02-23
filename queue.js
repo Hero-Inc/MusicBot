@@ -9,9 +9,6 @@ const send = require(`./lib.js`).send;
 queue = {
 	//download the next song in the queue
 	next: (id, bot, msg) => {
-		//kick out the currently playing song - which should actually be ended if this function is called
-		queue[id].splice(0, 1);
-
 		//Make sure theres actually another song to download
 		if (queue[id].length > 0) {
 
@@ -59,6 +56,9 @@ queue = {
 
 			//Song ended, start the next one
 			stream.once(`end`, reason => {
+				//kick out the currently playing song - which should actually be ended if this function is called
+				queue[id].splice(0, 1);
+
 				console.log(`Ended stream, reason: ` + reason);
 				queue.next(id, bot, msg);
 			});

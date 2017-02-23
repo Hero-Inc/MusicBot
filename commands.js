@@ -184,37 +184,7 @@ var commands = {
 
 								//A new video has been added lets check if we should start downloading that
 								if (queue[id].length === 1) {
-
-									//Lets take that metadata and get an audio file from it
-									let video = ytdl.downloadFromInfo(queue[id][0], {
-										filter: `audioonly`
-									});
-									let file = ``;
-
-									//When the download starts
-									video.on(`info`, (data) => {
-										//Pipe the audio to a file with no extension because I don't know how to work out the encoding and relevant extension
-										file = path.join(__dirname + `/audioFiles/`, data.title);
-										console.log(`Started download of ` + queue[id][0].title);
-										video.pipe(fs.createWriteStream(file));
-									});
-
-									//Download success
-									video.on(`end`, () => {
-										//Rename the file to have a .complete extension since it will still play fine and now I can differentiate between full and partial files
-										console.log(`Completed download of ` + queue[id][0].title);
-										let newFile = file + `.complete`;
-										fs.renameSync(file, newFile);
-										queue.play(id, bot, newFile, msg);
-									});
-
-									//The download failed
-									video.on(`error`, (err) => {
-										//Skip this one then
-										send(msg.channel, `There was an error downloading: ` + queue[id][0].title, {code: true}, 5000);
-										console.log(err);
-										queue.next(id, bot, msg);
-									});
+									queue.next(id, bot, msg);
 								}
 							} else {
 								send(msg.channel, `Sorry, that video exceeds the max video length`, 5000);
@@ -265,33 +235,7 @@ var commands = {
 
 												//If we just added the first video, start playing it
 												if (pos === 1 && sizeBefore === 0 && sizeBefore < queue[id].length) {
-													//take the metadata and get an audio file from it
-													let video = ytdl.downloadFromInfo(queue[id][0], {
-														filter: `audioonly`
-													});
-													let file = ``;
-
-													//pipe the audio stream to a file
-													video.on(`info`, (data) => {
-														file = path.join(__dirname + `/audioFiles/`, data.title);
-														console.log(`Started download of ` + queue[id][0].title);
-														video.pipe(fs.createWriteStream(file));
-													});
-
-													//rename the file to have a .complete extension and play it
-													video.on(`end`, () => {
-														console.log(`Completed download of ` + queue[id][0].title);
-														let newFile = file + `.complete`;
-														fs.renameSync(file, newFile);
-														queue.play(id, bot, newFile, msg);
-													});
-
-													//Just skip this song
-													video.on(`error`, (err) => {
-														send(msg.channel, `There was an error downloading: ` + queue[id][0].title, {code: true}, 8000);
-														console.log(err);
-														queue.next(id, bot, msg);
-													});
+													queue.next(id, bot, msg);
 												}
 											}
 										}
@@ -330,34 +274,7 @@ var commands = {
 
 							//A new video has been added lets check if we should start downloading that
 							if (queue[id].length === 1) {
-
-								//Get some audio from the metadata
-								let video = ytdl.downloadFromInfo(queue[id][0], {
-									filter: `audioonly`
-								});
-								let file = ``;
-
-								//pipe said audio to a file
-								video.on(`info`, (data) => {
-									file = path.join(__dirname + `/audioFiles/`, data.title);
-									console.log(`Started download of ` + queue[id][0].title);
-									video.pipe(fs.createWriteStream(file));
-								});
-
-								//Rename the file to have .complete extension and play file
-								video.on(`end`, () => {
-									console.log(`Completed download of ` + queue[id][0].title);
-									let newFile = file + `.complete`;
-									fs.renameSync(file, newFile);
-									queue.play(id, bot, newFile, msg);
-								});
-
-								//Skip this song
-								video.on(`error`, (err) => {
-									send(msg.channel, `There was an error downloading: ` + queue[id][0].title, {code: true}, 5000);
-									console.log(err);
-									queue.next(id, bot, msg);
-								});
+								queue.next(id, bot, msg);
 							}
 						} else {
 							send(msg.channel, `Sorry, that video exceeds the max video length`, {code: true}, 5000);
@@ -408,35 +325,7 @@ var commands = {
 
 								//A new video has been added lets check if we should start downloading that
 								if (queue[id].length === 1) {
-
-									//audio from metadata
-									//I should really offload this to its own function
-									let video = ytdl.downloadFromInfo(queue[id][0], {
-										filter: `audioonly`
-									});
-									let file = ``;
-
-									//pipe to file
-									video.on(`info`, (data) => {
-										file = path.join(__dirname + `/audioFiles/`, data.title);
-										console.log(`Started download of ` + queue[id][0].title);
-										video.pipe(fs.createWriteStream(file));
-									});
-
-									//rename and play file
-									video.on(`end`, () => {
-										console.log(`Completed download of ` + queue[id][0].title);
-										let newFile = file + `.complete`;
-										fs.renameSync(file, newFile);
-										queue.play(id, bot, newFile, msg);
-									});
-
-									//skip errornous song
-									video.on(`error`, (err) => {
-										send(msg.channel, `There was an error downloading: ` + queue[id][0].title, {code: true}, 8000);
-										console.log(err);
-										queue.next(id, bot, msg);
-									});
+									queue.next(id, bot, msg);
 								}
 							} else {
 								return send(msg.channel, `Sorry, that video exceeds the time limit`, 8000);
