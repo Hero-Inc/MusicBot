@@ -205,6 +205,7 @@ var commands = {
 							youtube.playlistItems.list({
 								part: `contentDetails`,
 								playlistId: plId,
+								maxResults: 50,
 								fields: `items/contentDetails/videoId`
 							}, (err, results) => {
 								if (err) {
