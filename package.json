@@ -17,6 +17,10 @@
     "url": "https://github.com/Heroj04/Neo/issues"
   },
   "homepage": "https://github.com/Heroj04/Neo",
+  "repository":
+  { "type" : "git"
+  , "url" : "https://github.com/Heroj04/Neo.git"
+  },
   "keywords": [
     "discord",
     "bot",
