@@ -11,7 +11,7 @@ queue = {
 	next: (id, bot, msg) => {
 		//Make sure theres actually another song to download
 		if (queue[id].length > 0) {
-			let file = path.join(__dirname + `/audioFiles/`, queue[id][0].title + `.complete`);
+			let file = path.join(__dirname + `/audioFiles/`, queue[id][0].video_id + `.complete`);
 			fs.access(file, err => {
 				if (err) {
 					//get some audio from some metadata
