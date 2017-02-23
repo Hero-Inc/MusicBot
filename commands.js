@@ -175,6 +175,22 @@ var commands = {
 		}
 	},
 
+	disconnect: {
+		voice: true,
+		deleteInvoking: true,
+		use: `disconnect`,
+		shortHelp: `Disconnects the bot from the current voice channel`,
+		longHelp: `Simply causes the bot to pause the current stream, and leave the voice channel.\nThe queue is kept, however when the bot is reconnected to a voice channel, the resume command will need to be used.`,
+		exe: (bot, msg, ...args) => {
+			let player = bot.voiceConnections.get(msg.channel.guild.id).player;
+			//Pause the bot's stream on the current server if it's not already paused
+			if (player.dispatcher !== undefined && !player.dispatcher.paused) {
+				player.dispatcher.pause();
+			}
+			player.voiceConnection.channel.leave();
+		}
+	},
+
 	play: {
 		voice: true,
 		deleteInvoking: true,
