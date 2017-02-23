@@ -16,11 +16,11 @@ queue = {
 				if (err) {
 					//get some audio from some metadata
 					let video = ytdl.downloadFromInfo(queue[id][0], {filter: `audioonly`});
-
+					let newFile = ``;
 					//pipe the audio into a file
 					video.on(`info`, (data) => {
 						console.log(`Started download of ` + queue[id][0].title);
-						let newFile = file.substring(0, (file.length - 9));
+						newFile = file.substring(0, (file.length - 9));
 						video.pipe(fs.createWriteStream(newFile));
 					});
 

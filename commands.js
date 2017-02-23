@@ -183,9 +183,12 @@ var commands = {
 		exe: (bot, msg, ...args) => {
 			let player = bot.voiceConnections.get(msg.channel.guild.id).player;
 			//Pause the bot's stream on the current server if it's not already paused
-			if (player.dispatcher !== undefined && !player.dispatcher.paused) {
-				player.dispatcher.pause();
+			if (player.dispatcher) {
+				if (player.dispatcher.paused) {
+					play.dispatcher.pause();
+				}
 			}
+
 			player.voiceConnection.channel.leave();
 		}
 	},
@@ -259,9 +262,9 @@ var commands = {
 
 								let pos = 0;
 								//Add each video one by one to the queue
-								results.items.forEach(element => {
+								results.forEach(element => {
 									//Get the video metadata
-									ytdl.getInfo(`www.youtube.com/watch?v=` + element.contentDetails.videoId, (err, info) => {
+									ytdl.getInfo(`www.youtube.com/watch?v=` + element, (err, info) => {
 										if (err) {
 											console.log(err);
 										} else {
