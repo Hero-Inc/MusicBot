@@ -19,6 +19,38 @@ var youtube = google.youtube({
 //Volume of the bot on each server is also stored in this object as 'vol<guildID>' (number between 0 and 1)
 var queue = require(`./queue.js`);
 
+function getAllIds (plid, token, idList, cb) {
+	if (typeof token === `function`) {
+		cb = idList;
+		idList = [];
+	}
+	if (typeof token === `function`) {
+		cb = token;
+		idList = [];
+		token = null;
+	}
+	youtube.playlistItems.list({
+		part: `contentDetails`,
+		playlistId: plid,
+		pageToken: token,
+		maxResults: 50,
+		fields: `items/contentDetails/videoId`
+	}, (err, results) => {
+		if (err) {
+			cb(err, null);
+		} else {
+			results.items.forEach(element => {
+				idList.push(element.contentDetails.videoId);
+			});
+			if (results.nextPageToken) {
+				getAllIds(plid, results.nextPageToken, idList, cb);
+			} else {
+				cb(null, idList);
+			}
+		}
+	});
+}
+
 /*
 	the object name is the actual command to be entered - this must be all lowercase (or i could add a toLowerCase() in main.js but I haven't)
 	voice dictates whether a user must be in the same voice channel as the bot to use the command
@@ -202,12 +234,8 @@ var commands = {
 						if (start > 0) {
 							plId = url.substring(start + 6);
 							//Get a list of all the videos in the playlist
-							youtube.playlistItems.list({
-								part: `contentDetails`,
-								playlistId: plId,
-								maxResults: 50,
-								fields: `items/contentDetails/videoId`
-							}, (err, results) => {
+
+							getAllIds(plId, (err, results) => {
 								if (err) {
 									//return errors if any
 									send(msg.channel, `There was an error adding this playlist`, 5000);
@@ -242,9 +270,9 @@ var commands = {
 										}
 									});
 								});
-								//I wanted this to say after all videos have been added but getInfo is async and its looped so ¯\_(ツ)_/¯
-								//send(msg.channel, `Added ` + pos + ` items from playlist`, 5000);
 							});
+							//I wanted this to say after all videos have been added but getInfo is async and its looped so ¯\_(ツ)_/¯
+							//send(msg.channel, `Added ` + pos + ` items from playlist`, 5000);
 						}
 
 					} else {
