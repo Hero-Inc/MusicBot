@@ -628,62 +628,7 @@ var commands = {
 			send(msg.channel, compMsg, {code: true}, 10000);
 		}
 	},
-	/* These commands aren't working
-	newgroup: {
-		voice: false,
-		deleteInvoking: true,
-		use: `newGroup <name>`,
-		shortHelp: `Create a new group`,
-		longHelp: `Create a new name with the specified name. The name must be one word.`,
-		exe: (bot, msg, ...args) => {
-
-		}
-	},
-
-	togroup: {
-		voice: false,
-		deleteInvoking: true,
-		use: `ToGroup <groupname> <[@user] | [@role]>`,
-		shortHelp: `Add users or roles to a group`,
-		longHelp: `enter a group name as the first parameter to add any user or role mentioned in the command to that group.`,
-		exe: (bot, msg, ...args) => {
-
-		}
-	},
-
-	fromgroup: {
-		voice: false,
-		deleteInvoking: true,
-		use: `FromGroup <groupname> <[@user] | [@role]>`,
-		shortHelp: `Remove users or roles from a group`,
-		longHelp: `enter a group name as the first parameter to add any user or role mentioned in the command to that group.`,
-		exe: (bot, msg, ...args) => {
-
-		}
-	},
-
-	deletegroup: {
-		voice: false,
-		deleteInvoking: true,
-		use: `deleteGroup <groupname>`,
-		shortHelp: `Delete a group`,
-		longHelp: `Remove a specified group from the bot, all users and roles in this group will lose their priviliges.`,
-		exe: (bot, msg, ...args) => {
-
-		}
-	},
-
-	ygo: {
-		voice: false,
-		deleteInvoking: true,
-		use: `ygo <Search String>`,
-		shortHelp: `Search for a Yu-Gi-Oh! card details`,
-		longHelp: `Enter a string to search the Yu-Gi-Oh! wiki for. This command checks the top three results and shows the first card results details, if a card is found.`,
-		exe: (bot, msg, ...args) => {
-
-		}
-	},
-	*/
+	
 	roll: {
 		voice: false,
 		deleteInvoking: false,
