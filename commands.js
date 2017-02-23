@@ -1,6 +1,5 @@
 //Requires
 const config = require(`./config.js`);
-const path = require(`path`);
 const fs = require(`fs`);
 const ytdl = require(`ytdl-core`);
 const google = require(`googleapis`);
