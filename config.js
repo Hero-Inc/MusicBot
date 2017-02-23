@@ -1,7 +1,7 @@
 module.exports = {
 
 	//The secret token the bot uses to login
-	botToken: `MjIyNjQyNzI1MDMwMTk5Mjk2.CyvtfQ.GCIWt7gjM70u5bQjU-WFesIiwgk`,
+	botToken: ``,
 	//The name the bot will show unless a custom nickname has been set on a server
 	botName: `Neo`,
 	//To change the avatar of the bot, simply edit the avatar.png file
@@ -16,7 +16,7 @@ module.exports = {
 	cmdPrefix: `>`,
 
 	//The ID of the bot's owner, they have full access
-	ownerID: `134098728880439296`,
+	ownerID: ``,
 
 	//The time in milliseconds before a command invoking message is deleted
 	deleteInvokingTime: 5000,
