@@ -201,14 +201,26 @@ var commands = {
 		longHelp: `Enter a URL to a sound clip. This will be downloaded and played in the currently connected voice channel.\nEntering text which is not a URL after the command will instead search youtube using the provided term and play the returned video.\n\nBy default the audio track is added to the end of the queue, however if '--playnext' is added to the command the audio track will be added to the start of the queue.`,
 		exe: (bot, msg, ...args) => {
 			let id = msg.channel.guild.id;
+			let playNext = msg.content.toLowerCase().includes(`--playnext`);
+			let type = ``;
 			if (args.length !== 1) {
 				//Proccess the command
-
 				if (args[1].includes(`youtube.com`)) {
-					//It's a youtube link, cool
-
 					if (args[1].includes(`watch?v=`)) {
-						//It's a video
+						type = `video`;
+					} else if (args[1].includes(`playlist?list=`)) {
+						type = `playlist`;
+					}
+				} else if (args[1].includes(`youtu.be`)) {
+					type = `video`;
+				} else if (msg.content.toLowerCase().includes(`://`) || msg.content.toLowerCase().includes(`www.`)) {
+					//It's a website that's not youtube
+				} else {
+					type = `search`;
+				}
+
+				switch (type) {
+					case `video`:
 						//Get the video metadata
 						ytdl.getInfo(args[1], (err, info) => {
 							if (err) {
@@ -221,7 +233,7 @@ var commands = {
 							if (info.length_seconds <= config.maxVideoLength) {
 
 								//Should we queue it next or at the end
-								if (msg.content.toLowerCase().includes(`--playnext`)) {
+								if (playNext) {
 									//Add the video to the start of the queue (pos 0 if the queue is empty or pos 1 if not)
 									queue[id].length > 0 ? queue[id].splice(1, 0, info) : queue[id].shift(info);
 								} else {
@@ -240,9 +252,8 @@ var commands = {
 								send(msg.channel, `Sorry, that video exceeds the max video length`, 5000);
 							}
 						});
-					} else if (args[1].includes(`playlist?list=`)) {
-						//It's a playlist
-
+						break;
+					case `playlist`:
 						let sizeBefore = queue[id].length;
 						let url = args[1];
 						let plId = ``;
@@ -266,24 +277,23 @@ var commands = {
 									//Get the video metadata
 									ytdl.getInfo(`www.youtube.com/watch?v=` + element, (err, info) => {
 										if (err) {
-											console.log(err);
-										} else {
-											//Check if it exceeds our configured time limit
-											if (info.length_seconds <= config.maxVideoLength) {
-												//add it to either the end of the queue or next in the queue
-												//This should maintain playlist order either way
-												if (msg.content.toLowerCase().includes(`--playnext`)) {
-													queue[id].splice(pos, 0, info);
-													pos++;
-												} else {
-													queue[id].push(info);
-													pos++;
-												}
+											return console.log(err);
+										}
+										//Check if it exceeds our configured time limit
+										if (info.length_seconds <= config.maxVideoLength) {
+											//add it to either the end of the queue or next in the queue
+											//This should maintain playlist order either way
+											if (playNext) {
+												queue[id].splice(pos, 0, info);
+												pos++;
+											} else {
+												queue[id].push(info);
+												pos++;
+											}
 
-												//If we just added the first video, start playing it
-												if (pos === 1 && sizeBefore === 0 && sizeBefore < queue[id].length) {
-													queue.next(id, bot, msg);
-												}
+											//If we just added the first video, start playing it
+											if (pos === 1 && sizeBefore === 0 && sizeBefore < queue[id].length) {
+												queue.next(id, bot, msg);
 											}
 										}
 									});
@@ -292,93 +302,56 @@ var commands = {
 							//I wanted this to say after all videos have been added but getInfo is async and its looped so ¯\_(ツ)_/¯
 							//send(msg.channel, `Added ` + pos + ` items from playlist`, 5000);
 						}
+						break;
+					case `search`:
+						//Get the search string
+						let search = args.splice(0, 1);
+						search = search.join(` `);
+						search = encodeURI(search);
 
-					} else {
-						//It's something weird like a channel
-						console.log(`Only videos or playlists please`);
-					}
-				} else if (args[1].includes(`youtu.be`)) {
-					//It's a shortened Youtube URL
-					//Get some video metadata
-					ytdl.getInfo(args[1], (err, info) => {
-						if (err) {
-							send(msg.channel, `Error adding video: ` + err, {code: true}, 20000);
-							return console.log(err);
-						}
-						//Mkae sure video isn't too long
-						if (info.length_seconds < config.maxVideoLength) {
-
-							//next in queue or end of queue
-							if (msg.content.toLowerCase().includes(`--playnext`)) {
-								//Add the video to the start of the queue
-								queue[id].splice(1, 0, info);
-							} else {
-								//Add the video to the end of the queue
-								queue[id].push(info);
-							}
-
-							send(msg.channel, `Enqueued ` + info.title, 5000);
-
-							//A new video has been added lets check if we should start downloading that
-							if (queue[id].length === 1) {
-								queue.next(id, bot, msg);
-							}
-						} else {
-							send(msg.channel, `Sorry, that video exceeds the max video length`, {code: true}, 5000);
-						}
-					});
-				} else {
-					//It's either a search string or another website.
-					//Check to see if it is a url - Maybe I should make this better but ¯\_(ツ)_/¯
-					if (msg.content.toLowerCase().includes(`://`) || msg.content.toLowerCase().includes(`www.`)) {
-						return send(msg.channel, `Sorry, only youtube please`, 5000);
-					}
-
-					//Get the search string
-					let search = args.splice(0, 1);
-					search = search.join(` `);
-					search = encodeURI(search);
-
-					//Use the youtube api to search for a single video using this search string and get it's ID
-					youtube.search.list({
-						part: `snippet`,
-						maxResults: 1,
-						q: search,
-						fields: `items/id/videoId`
-					}, (err, results) => {
-						if (err) {
-							send(msg.channel, `Error searching for video`, 8000);
-							return console.log(err);
-						}
-
-						//Get some metadata for the returned video
-						ytdl.getInfo(`www.youtube.com/watch?v=` + results.items[0].id.videoId, (err, info) => {
+						//Use the youtube api to search for a single video using this search string and get it's ID
+						youtube.search.list({
+							part: `snippet`,
+							maxResults: 1,
+							q: search,
+							fields: `items/id/videoId`
+						}, (err, results) => {
 							if (err) {
-								send(msg.channel, `Error adding video`, 8000);
+								send(msg.channel, `Error searching for video`, 8000);
 								return console.log(err);
 							}
-							//Check if the video is too long
-							if (info.length_seconds < config.maxVideoLength) {
-								//next in queue or end of queue
-								if (msg.content.toLowerCase().includes(`--playnext`)) {
-									//Add the video to the start of the queue (pos 0 if the queue is empty or pos 1 if not)
-									queue[id].length > 0 ? queue[id].splice(1, 0, info) : queue[id].shift(info);
+
+							//Get some metadata for the returned video
+							ytdl.getInfo(`www.youtube.com/watch?v=` + results.items[0].id.videoId, (err, info) => {
+								if (err) {
+									send(msg.channel, `Error adding video`, 8000);
+									return console.log(err);
+								}
+								//Check if the video is too long
+								if (info.length_seconds < config.maxVideoLength) {
+									//next in queue or end of queue
+									if (playNext) {
+										//Add the video to the start of the queue (pos 0 if the queue is empty or pos 1 if not)
+										queue[id].length > 0 ? queue[id].splice(1, 0, info) : queue[id].shift(info);
+									} else {
+										//Add the video to the end of the queue
+										queue[id].push(info);
+									}
+
+									send(msg.channel, `Enqueued ` + info.title, 5000);
+
+									//A new video has been added lets check if we should start downloading that
+									if (queue[id].length === 1) {
+										queue.next(id, bot, msg);
+									}
 								} else {
-									//Add the video to the end of the queue
-									queue[id].push(info);
+									return send(msg.channel, `Sorry, that video exceeds the time limit`, 8000);
 								}
-
-								send(msg.channel, `Enqueued ` + info.title, 5000);
-
-								//A new video has been added lets check if we should start downloading that
-								if (queue[id].length === 1) {
-									queue.next(id, bot, msg);
-								}
-							} else {
-								return send(msg.channel, `Sorry, that video exceeds the time limit`, 8000);
-							}
+							});
 						});
-					});
+						break;
+					default:
+						send(msg.channel, `Only Youtube links or search strings please`, 8000);
 				}
 			} else {
 				//They entered the command on it's own
@@ -628,7 +601,7 @@ var commands = {
 			send(msg.channel, compMsg, {code: true}, 10000);
 		}
 	},
-	
+
 	roll: {
 		voice: false,
 		deleteInvoking: false,
