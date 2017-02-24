@@ -61,6 +61,21 @@ function getAllIds (plid, token, idList, cb) {
  */
 
 var commands = {
+	eval: {
+		voice: false,
+		deleteInvoking: false,
+		use: `eval <script to run>`,
+		shortHelp: `Run a script`,
+		longHelp: `Execute a provided script as a functions and replies with anyhting that the functions returns`,
+		exe: (bot, msg, ...args) => {
+			if (args.length > 1) {
+				args.splice(0, 1);
+				let script = args.join(` `);
+				send(msg.channel, eval(script), {code: `JavaScript`}, 0);
+			}
+		}
+	},
+
 	ping: {
 		voice: false,
 		deleteInvoking: false,
