@@ -454,12 +454,14 @@ var commands = {
 			//Is there even a queue on this server yet
 			if (queue[id] !== undefined && queue[id].length > 0) {
 				let compMsg = `Current Queue`;
+				let len = queue[id].length < 12 ? queue[id].length : 11;
 				//Iterate through all the items in this servers queue and add them to the message
-				for (let i = 0; i < queue[id].length; i++) {
+				for (let i = 0; i < len; i++) {
 					compMsg += `\n` + i + `. ` + queue[id][i].title;
 				}
+				compMsg += queue[id].length < 13 ? `` : `\n\n And ` + (queue[id].length - 11) + ` more`;
 				//Send the compiled queue message to the server
-				send(msg.channel, compMsg, {split: true}, 30000);
+				send(msg.channel, compMsg, 30000);
 			} else {
 				send(msg.channel, `There is nothing in the queue`, 5000);
 			}
