@@ -4,8 +4,14 @@ const fs = require(`fs`);
 const ytdl = require(`ytdl-core`);
 const google = require(`googleapis`);
 const send = require(`./lib.js`).send;
+const clever = require(`cleverbot-node`);
 
 var permissions = require(`./permissions.js`);
+
+//To make requests to cleverbot
+var cleverbot = new clever;
+cleverbot.configure({botapi: `CCCnclk0TkAmXPvhv57XNB2vFVQ`});
+
 //To make a Youtube queries for getting playlist items
 var youtube = google.youtube({
 	version: `v3`,
@@ -811,6 +817,24 @@ var commands = {
 					send(msg.channel, `No tags for this server exist, create some with addTag`, 10000);
 				}
 			});
+		}
+	},
+
+	clever: {
+		voice: false,
+		deleteInvoking: false,
+		user: `clever <message>`,
+		shortHelp: `Talk with the bot`,
+		longHelp: `Sends the provided message to the cleverbot service and replies with the message returned from cleverbot.`,
+		exe: (bot, msg, ...args) => {
+			if (args.length > 1) {
+				args.splice(0, 1);
+				cleverbot.write(args.join(` `), response => {
+					send(msg.channel, response.output, 0);
+				});
+			} else {
+				send(msg.channel, `Don't be shy`, 0);
+			}
 		}
 	}
 };
