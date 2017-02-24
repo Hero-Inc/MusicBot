@@ -851,6 +851,26 @@ var commands = {
 				send(msg.channel, `Don't be shy`, 0);
 			}
 		}
+	},
+
+	listids: {
+		voice: false,
+		deleteInvoking: false,
+		use: `listIDs`,
+		shortHelp: `List Server IDs`,
+		longHelp: `Returns a list of IDs for roles, text channels and voice channels on a server.`,
+		exe: (bot, msg, ...args) => {
+			let compMsg = ``;
+			compMsg += `IDs for server: ` + msg.channel.guild.id + `\n- Channels -`;
+			msg.channel.guild.channels.array().forEach(element => {
+				compMsg += `\n` + element.name + `: ` + element.id;
+			});
+			compMsg += `\n- Roles-`;
+			msg.channel.guild.roles.array().forEach(element => {
+				compMsg += `\n` + element.name + `: ` + element.id;
+			});
+			send(msg.channel, compMsg, {code: true}, 0);
+		}
 	}
 };
 
