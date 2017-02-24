@@ -838,7 +838,7 @@ var commands = {
 	clever: {
 		voice: false,
 		deleteInvoking: false,
-		user: `clever <message>`,
+		use: `clever <message>`,
 		shortHelp: `Talk with the bot`,
 		longHelp: `Sends the provided message to the cleverbot service and replies with the message returned from cleverbot.`,
 		exe: (bot, msg, ...args) => {
