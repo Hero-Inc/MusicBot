@@ -459,7 +459,9 @@ var commands = {
 				for (let i = 0; i < len; i++) {
 					compMsg += `\n` + i + `. ` + queue[id][i].title;
 				}
-				compMsg += queue[id].length < 13 ? `` : `\n\n And ` + (queue[id].length - 11) + ` more`;
+				if (queue[id].length > 12) {
+					compMsg += `\n\n And ` + (queue[id].length - 11) + ` more`;
+				}
 				//Send the compiled queue message to the server
 				send(msg.channel, compMsg, 30000);
 			} else {
