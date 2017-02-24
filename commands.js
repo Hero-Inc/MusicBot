@@ -10,12 +10,12 @@ var permissions = require(`./permissions.js`);
 
 //To make requests to cleverbot
 var cleverbot = new clever;
-cleverbot.configure({botapi: `CCCnclk0TkAmXPvhv57XNB2vFVQ`});
+cleverbot.configure({botapi: config.cleverBotAPIKey});
 
 //To make a Youtube queries for getting playlist items
 var youtube = google.youtube({
 	version: `v3`,
-	auth: `AIzaSyCLuDKIFxIljNvS1U9JJvBzvUZIZ3p7Ve8`
+	auth: config.googleAPIKey
 });
 
 //The music queue, the property name is the guildid which links to array of video info

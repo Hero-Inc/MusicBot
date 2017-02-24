@@ -21,4 +21,9 @@ module.exports = {
 	//The time in milliseconds before a command invoking message is deleted
 	deleteInvokingTime: 5000,
 
+	//The API Key to use cleverbot Make a free one here (www.cleverbot.com/api)
+	cleverBotAPIKey: ``,
+
+	//The API key to use google api services
+	googleAPIKey: ``,
 };
