@@ -19,7 +19,7 @@ var youtube = google.youtube({
 var queue = require(`./queue.js`);
 
 function getAllIds (plid, token, idList, cb) {
-	if (typeof token === `function`) {
+	if (typeof idList === `function`) {
 		cb = idList;
 		idList = [];
 	}
