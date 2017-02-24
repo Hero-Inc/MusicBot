@@ -381,6 +381,21 @@ var commands = {
 		}
 	},
 
+	np: {
+		voice: true,
+		deleteInvoking: true,
+		use: `np`,
+		shortHelp: `See what's playing`,
+		longHelp: `Shows the title of the youtube video currently playing`,
+		exe: (bot, msg, ...args) => {
+			if (queue[msg.channel.guild.id].length > 0) {
+				send(msg.channel, `Currently playing: ` + queue[msg.channel.guild.id][0].title, 10000);
+			} else {
+				send(msg.channel, `Nothing is playing right now`, 10000);
+			}
+		}
+	},
+
 	volume: {
 		voice: true,
 		deleteInvoking: true,
