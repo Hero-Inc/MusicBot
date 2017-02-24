@@ -4,7 +4,7 @@ module.exports = {
 		roles: []
 	},
 	default: { //Commands that everyone can use except those who are blacklisted
-		commands: [`ping`, `foo`, `help`, `queue`, `tag`, `groups`, `roll`, `taglist`]
+		commands: [`ping`, `foo`, `help`, `queue`, `tag`, `groups`, `roll`, `taglist`, `np`, `echo`, `clever`]
 	},
 	blacklist: { //Can use no commands
 		users: [],
