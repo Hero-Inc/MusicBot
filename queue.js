@@ -45,31 +45,22 @@ queue = {
 	},
 
 	play: (id, bot, file, msg) => {
-		//create a stream from the file data
-		let audio = fs.createReadStream(file);
+		//start playing the audio
+		let stream = bot.voiceConnections.get(id).playFile(file, {volume: queue[`vol` + id]});
 
-		//check to see if the stream was actually made
-		if (audio !== undefined) {
-			//start playing the audio
-			let stream = bot.voiceConnections.get(id).playStream(audio, {volume: queue[`vol` + id]});
+		//tell the users what we're playing
+		stream.once(`start`, () => {
+			send(msg.channel, `Now playing: ` + queue[id][0].title, 10000);
+		});
 
-			//tell the users what we're playing
-			stream.once(`start`, () => {
-				send(msg.channel, `Now playing: ` + queue[id][0].title, 10000);
-			});
+		//Song ended, start the next one
+		stream.once(`end`, reason => {
+			//kick out the currently playing song - which should actually be ended if this function is called
+			queue[id].splice(0, 1);
 
-			//Song ended, start the next one
-			stream.once(`end`, reason => {
-				//kick out the currently playing song - which should actually be ended if this function is called
-				queue[id].splice(0, 1);
-
-				console.log(`Ended stream, reason: ` + reason);
-				queue.next(id, bot, msg);
-			});
-		} else {
-			console.log(`error playing file`);
+			console.log(`Ended stream, reason: ` + reason);
 			queue.next(id, bot, msg);
-		}
+		});
 	},
 };
 

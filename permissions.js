@@ -4,14 +4,14 @@ module.exports = {
 		roles: []
 	},
 	default: { //Commands that everyone can use except those who are blacklisted
-		commands: [`ping`, `foo`, `help`, `queue`, 'tag']
+		commands: [`ping`, `foo`, `help`, `queue`, `tag`, `groups`, `roll`, `taglist`, `np`, `echo`, `clever`]
 	},
 	blacklist: { //Can use no commands
 		users: [],
 		roles: []
 	},
 	dj: { //Can use all music based commands
-		commands: [`summon`, `play`, `playnext`, `pause`, `resume`, `skip`, `clear`, `remove`, `volume`],
+		commands: [`summon`, `play`, `pause`, `resume`, `skip`, `clear`, `remove`, `volume`, `move`, `shuffle`],
 		users: [],
 		roles: []
 	}

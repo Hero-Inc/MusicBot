@@ -4,6 +4,7 @@
   "description": "A simple Discord Bot",
   "main": "main.js",
   "dependencies": {
+    "cleverbot-node": "^0.3.3",
     "discord.js": "^11.0.0",
     "googleapis": "^16.1.0",
     "opusscript": "^0.0.1",
@@ -17,9 +18,9 @@
     "url": "https://github.com/Heroj04/Neo/issues"
   },
   "homepage": "https://github.com/Heroj04/Neo",
-  "repository":
-  { "type" : "git"
-  , "url" : "https://github.com/Heroj04/Neo.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Heroj04/Neo.git"
   },
   "keywords": [
     "discord",

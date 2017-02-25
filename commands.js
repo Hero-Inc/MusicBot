@@ -4,12 +4,18 @@ const fs = require(`fs`);
 const ytdl = require(`ytdl-core`);
 const google = require(`googleapis`);
 const send = require(`./lib.js`).send;
+const clever = require(`cleverbot-node`);
 
 var permissions = require(`./permissions.js`);
+
+//To make requests to cleverbot
+var cleverbot = new clever;
+cleverbot.configure({botapi: config.cleverBotAPIKey});
+
 //To make a Youtube queries for getting playlist items
 var youtube = google.youtube({
 	version: `v3`,
-	auth: `AIzaSyCLuDKIFxIljNvS1U9JJvBzvUZIZ3p7Ve8`
+	auth: config.googleAPIKey
 });
 
 //The music queue, the property name is the guildid which links to array of video info
@@ -19,7 +25,7 @@ var youtube = google.youtube({
 var queue = require(`./queue.js`);
 
 function getAllIds (plid, token, idList, cb) {
-	if (typeof token === `function`) {
+	if (typeof idList === `function`) {
 		cb = idList;
 		idList = [];
 	}
@@ -61,6 +67,21 @@ function getAllIds (plid, token, idList, cb) {
  */
 
 var commands = {
+	eval: {
+		voice: false,
+		deleteInvoking: false,
+		use: `eval <script to run>`,
+		shortHelp: `Run a script`,
+		longHelp: `Execute a provided script as a functions and replies with anyhting that the functions returns`,
+		exe: (bot, msg, ...args) => {
+			if (args.length > 1) {
+				args.splice(0, 1);
+				let script = args.join(` `);
+				send(msg.channel, eval(script), {code: `JavaScript`}, 0);
+			}
+		}
+	},
+
 	ping: {
 		voice: false,
 		deleteInvoking: false,
@@ -201,14 +222,26 @@ var commands = {
 		longHelp: `Enter a URL to a sound clip. This will be downloaded and played in the currently connected voice channel.\nEntering text which is not a URL after the command will instead search youtube using the provided term and play the returned video.\n\nBy default the audio track is added to the end of the queue, however if '--playnext' is added to the command the audio track will be added to the start of the queue.`,
 		exe: (bot, msg, ...args) => {
 			let id = msg.channel.guild.id;
+			let playNext = msg.content.toLowerCase().includes(`--playnext`);
+			let type = ``;
 			if (args.length !== 1) {
 				//Proccess the command
-
 				if (args[1].includes(`youtube.com`)) {
-					//It's a youtube link, cool
-
 					if (args[1].includes(`watch?v=`)) {
-						//It's a video
+						type = `video`;
+					} else if (args[1].includes(`playlist?list=`)) {
+						type = `playlist`;
+					}
+				} else if (args[1].includes(`youtu.be`)) {
+					type = `video`;
+				} else if (msg.content.toLowerCase().includes(`://`) || msg.content.toLowerCase().includes(`www.`)) {
+					//It's a website that's not youtube
+				} else {
+					type = `search`;
+				}
+
+				switch (type) {
+					case `video`:
 						//Get the video metadata
 						ytdl.getInfo(args[1], (err, info) => {
 							if (err) {
@@ -221,7 +254,7 @@ var commands = {
 							if (info.length_seconds <= config.maxVideoLength) {
 
 								//Should we queue it next or at the end
-								if (msg.content.toLowerCase().includes(`--playnext`)) {
+								if (playNext) {
 									//Add the video to the start of the queue (pos 0 if the queue is empty or pos 1 if not)
 									queue[id].length > 0 ? queue[id].splice(1, 0, info) : queue[id].shift(info);
 								} else {
@@ -240,9 +273,8 @@ var commands = {
 								send(msg.channel, `Sorry, that video exceeds the max video length`, 5000);
 							}
 						});
-					} else if (args[1].includes(`playlist?list=`)) {
-						//It's a playlist
-
+						break;
+					case `playlist`:
 						let sizeBefore = queue[id].length;
 						let url = args[1];
 						let plId = ``;
@@ -266,24 +298,23 @@ var commands = {
 									//Get the video metadata
 									ytdl.getInfo(`www.youtube.com/watch?v=` + element, (err, info) => {
 										if (err) {
-											console.log(err);
-										} else {
-											//Check if it exceeds our configured time limit
-											if (info.length_seconds <= config.maxVideoLength) {
-												//add it to either the end of the queue or next in the queue
-												//This should maintain playlist order either way
-												if (msg.content.toLowerCase().includes(`--playnext`)) {
-													queue[id].splice(pos, 0, info);
-													pos++;
-												} else {
-													queue[id].push(info);
-													pos++;
-												}
+											return console.log(err);
+										}
+										//Check if it exceeds our configured time limit
+										if (info.length_seconds <= config.maxVideoLength) {
+											//add it to either the end of the queue or next in the queue
+											//This should maintain playlist order either way
+											if (playNext) {
+												queue[id].splice(pos, 0, info);
+												pos++;
+											} else {
+												queue[id].push(info);
+												pos++;
+											}
 
-												//If we just added the first video, start playing it
-												if (pos === 1 && sizeBefore === 0 && sizeBefore < queue[id].length) {
-													queue.next(id, bot, msg);
-												}
+											//If we just added the first video, start playing it
+											if (pos === 1 && sizeBefore === 0 && sizeBefore < queue[id].length) {
+												queue.next(id, bot, msg);
 											}
 										}
 									});
@@ -292,97 +323,75 @@ var commands = {
 							//I wanted this to say after all videos have been added but getInfo is async and its looped so ¯\_(ツ)_/¯
 							//send(msg.channel, `Added ` + pos + ` items from playlist`, 5000);
 						}
+						break;
+					case `search`:
+						//Get the search string
+						let search = args.splice(0, 1);
+						search = search.join(` `);
+						search = encodeURI(search);
 
-					} else {
-						//It's something weird like a channel
-						console.log(`Only videos or playlists please`);
-					}
-				} else if (args[1].includes(`youtu.be`)) {
-					//It's a shortened Youtube URL
-					//Get some video metadata
-					ytdl.getInfo(args[1], (err, info) => {
-						if (err) {
-							send(msg.channel, `Error adding video: ` + err, {code: true}, 20000);
-							return console.log(err);
-						}
-						//Mkae sure video isn't too long
-						if (info.length_seconds < config.maxVideoLength) {
-
-							//next in queue or end of queue
-							if (msg.content.toLowerCase().includes(`--playnext`)) {
-								//Add the video to the start of the queue
-								queue[id].splice(1, 0, info);
-							} else {
-								//Add the video to the end of the queue
-								queue[id].push(info);
-							}
-
-							send(msg.channel, `Enqueued ` + info.title, 5000);
-
-							//A new video has been added lets check if we should start downloading that
-							if (queue[id].length === 1) {
-								queue.next(id, bot, msg);
-							}
-						} else {
-							send(msg.channel, `Sorry, that video exceeds the max video length`, {code: true}, 5000);
-						}
-					});
-				} else {
-					//It's either a search string or another website.
-					//Check to see if it is a url - Maybe I should make this better but ¯\_(ツ)_/¯
-					if (msg.content.toLowerCase().includes(`://`) || msg.content.toLowerCase().includes(`www.`)) {
-						return send(msg.channel, `Sorry, only youtube please`, 5000);
-					}
-
-					//Get the search string
-					let search = args.splice(0, 1);
-					search = search.join(` `);
-					search = encodeURI(search);
-
-					//Use the youtube api to search for a single video using this search string and get it's ID
-					youtube.search.list({
-						part: `snippet`,
-						maxResults: 1,
-						q: search,
-						fields: `items/id/videoId`
-					}, (err, results) => {
-						if (err) {
-							send(msg.channel, `Error searching for video`, 8000);
-							return console.log(err);
-						}
-
-						//Get some metadata for the returned video
-						ytdl.getInfo(`www.youtube.com/watch?v=` + results.items[0].id.videoId, (err, info) => {
+						//Use the youtube api to search for a single video using this search string and get it's ID
+						youtube.search.list({
+							part: `snippet`,
+							maxResults: 1,
+							q: search,
+							fields: `items/id/videoId`
+						}, (err, results) => {
 							if (err) {
-								send(msg.channel, `Error adding video`, 8000);
+								send(msg.channel, `Error searching for video`, 8000);
 								return console.log(err);
 							}
-							//Check if the video is too long
-							if (info.length_seconds < config.maxVideoLength) {
-								//next in queue or end of queue
-								if (msg.content.toLowerCase().includes(`--playnext`)) {
-									//Add the video to the start of the queue (pos 0 if the queue is empty or pos 1 if not)
-									queue[id].length > 0 ? queue[id].splice(1, 0, info) : queue[id].shift(info);
+
+							//Get some metadata for the returned video
+							ytdl.getInfo(`www.youtube.com/watch?v=` + results.items[0].id.videoId, (err, info) => {
+								if (err) {
+									send(msg.channel, `Error adding video`, 8000);
+									return console.log(err);
+								}
+								//Check if the video is too long
+								if (info.length_seconds < config.maxVideoLength) {
+									//next in queue or end of queue
+									if (playNext) {
+										//Add the video to the start of the queue (pos 0 if the queue is empty or pos 1 if not)
+										queue[id].length > 0 ? queue[id].splice(1, 0, info) : queue[id].shift(info);
+									} else {
+										//Add the video to the end of the queue
+										queue[id].push(info);
+									}
+
+									send(msg.channel, `Enqueued ` + info.title, 5000);
+
+									//A new video has been added lets check if we should start downloading that
+									if (queue[id].length === 1) {
+										queue.next(id, bot, msg);
+									}
 								} else {
-									//Add the video to the end of the queue
-									queue[id].push(info);
+									return send(msg.channel, `Sorry, that video exceeds the time limit`, 8000);
 								}
-
-								send(msg.channel, `Enqueued ` + info.title, 5000);
-
-								//A new video has been added lets check if we should start downloading that
-								if (queue[id].length === 1) {
-									queue.next(id, bot, msg);
-								}
-							} else {
-								return send(msg.channel, `Sorry, that video exceeds the time limit`, 8000);
-							}
+							});
 						});
-					});
+						break;
+					default:
+						send(msg.channel, `Only Youtube links or search strings please`, 8000);
 				}
 			} else {
 				//They entered the command on it's own
 				send(msg.channel, `Incorrect syntax, type '` + config.cmdPrefix + `help play' to learn more`, 20000);
+			}
+		}
+	},
+
+	np: {
+		voice: true,
+		deleteInvoking: true,
+		use: `np`,
+		shortHelp: `See what's playing`,
+		longHelp: `Shows the title of the youtube video currently playing`,
+		exe: (bot, msg, ...args) => {
+			if (queue[msg.channel.guild.id].length > 0) {
+				send(msg.channel, `Currently playing: ` + queue[msg.channel.guild.id][0].title, 10000);
+			} else {
+				send(msg.channel, `Nothing is playing right now`, 10000);
 			}
 		}
 	},
@@ -481,12 +490,16 @@ var commands = {
 			//Is there even a queue on this server yet
 			if (queue[id] !== undefined && queue[id].length > 0) {
 				let compMsg = `Current Queue`;
+				let len = queue[id].length < 12 ? queue[id].length : 11;
 				//Iterate through all the items in this servers queue and add them to the message
-				for (let i = 0; i < queue[id].length; i++) {
+				for (let i = 0; i < len; i++) {
 					compMsg += `\n` + i + `. ` + queue[id][i].title;
 				}
+				if (queue[id].length > 12) {
+					compMsg += `\n\n And ` + (queue[id].length - 11) + ` more`;
+				}
 				//Send the compiled queue message to the server
-				send(msg.channel, compMsg, {split: true}, 30000);
+				send(msg.channel, compMsg, 30000);
 			} else {
 				send(msg.channel, `There is nothing in the queue`, 5000);
 			}
@@ -628,62 +641,7 @@ var commands = {
 			send(msg.channel, compMsg, {code: true}, 10000);
 		}
 	},
-	/* These commands aren't working
-	newgroup: {
-		voice: false,
-		deleteInvoking: true,
-		use: `newGroup <name>`,
-		shortHelp: `Create a new group`,
-		longHelp: `Create a new name with the specified name. The name must be one word.`,
-		exe: (bot, msg, ...args) => {
 
-		}
-	},
-
-	togroup: {
-		voice: false,
-		deleteInvoking: true,
-		use: `ToGroup <groupname> <[@user] | [@role]>`,
-		shortHelp: `Add users or roles to a group`,
-		longHelp: `enter a group name as the first parameter to add any user or role mentioned in the command to that group.`,
-		exe: (bot, msg, ...args) => {
-
-		}
-	},
-
-	fromgroup: {
-		voice: false,
-		deleteInvoking: true,
-		use: `FromGroup <groupname> <[@user] | [@role]>`,
-		shortHelp: `Remove users or roles from a group`,
-		longHelp: `enter a group name as the first parameter to add any user or role mentioned in the command to that group.`,
-		exe: (bot, msg, ...args) => {
-
-		}
-	},
-
-	deletegroup: {
-		voice: false,
-		deleteInvoking: true,
-		use: `deleteGroup <groupname>`,
-		shortHelp: `Delete a group`,
-		longHelp: `Remove a specified group from the bot, all users and roles in this group will lose their priviliges.`,
-		exe: (bot, msg, ...args) => {
-
-		}
-	},
-
-	ygo: {
-		voice: false,
-		deleteInvoking: true,
-		use: `ygo <Search String>`,
-		shortHelp: `Search for a Yu-Gi-Oh! card details`,
-		longHelp: `Enter a string to search the Yu-Gi-Oh! wiki for. This command checks the top three results and shows the first card results details, if a card is found.`,
-		exe: (bot, msg, ...args) => {
-
-		}
-	},
-	*/
 	roll: {
 		voice: false,
 		deleteInvoking: false,
@@ -874,6 +832,44 @@ var commands = {
 					send(msg.channel, `No tags for this server exist, create some with addTag`, 10000);
 				}
 			});
+		}
+	},
+
+	clever: {
+		voice: false,
+		deleteInvoking: false,
+		use: `clever <message>`,
+		shortHelp: `Talk with the bot`,
+		longHelp: `Sends the provided message to the cleverbot service and replies with the message returned from cleverbot.`,
+		exe: (bot, msg, ...args) => {
+			if (args.length > 1) {
+				args.splice(0, 1);
+				cleverbot.write(args.join(` `), response => {
+					send(msg.channel, response.output, 0);
+				});
+			} else {
+				send(msg.channel, `Don't be shy`, 0);
+			}
+		}
+	},
+
+	listids: {
+		voice: false,
+		deleteInvoking: false,
+		use: `listIDs`,
+		shortHelp: `List Server IDs`,
+		longHelp: `Returns a list of IDs for roles, text channels and voice channels on a server.`,
+		exe: (bot, msg, ...args) => {
+			let compMsg = ``;
+			compMsg += `IDs for server: ` + msg.channel.guild.id + `\n- Channels -`;
+			msg.channel.guild.channels.array().forEach(element => {
+				compMsg += `\n` + element.name + `: ` + element.id;
+			});
+			compMsg += `\n- Roles-`;
+			msg.channel.guild.roles.array().forEach(element => {
+				compMsg += `\n` + element.name + `: ` + element.id;
+			});
+			send(msg.channel, compMsg, {code: true}, 0);
 		}
 	}
 };
