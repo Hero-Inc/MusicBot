@@ -326,9 +326,12 @@ var commands = {
 						break;
 					case `search`:
 						//Get the search string
-						let search = args.splice(0, 1);
+						let search = args;
+						search.splice(0, 1);
+						if (search.include(`--playnext`)) {
+							search.splice(search.indexOf(`--playnext`), 1);
+						}
 						search = search.join(` `);
-						search = encodeURI(search);
 
 						//Use the youtube api to search for a single video using this search string and get it's ID
 						youtube.search.list({
