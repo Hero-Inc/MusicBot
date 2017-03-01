@@ -157,7 +157,7 @@ var commands = {
 			} else {
 				//Display specific command help
 				if (commands[args[1]] !== undefined) {
-					send(msg.channel, config.cmdPrefix + commands[args[1]].use + `\n  #` + commands[args[1]].longHelp, {
+					send(msg.channel, config.cmdPrefix + commands[args[1]].use + `\n -` + commands[args[1]].longHelp, {
 						code: `Markdown`
 					}, 0);
 				} else {
