@@ -191,6 +191,9 @@ var commands = {
 			}, (err) => {
 				send(msg.channel, `Failed to join channel`, 5000);
 				console.log(err);
+			}).catch(err => {
+				send(msg.channel, `Connection issue`, 5000);
+				console.log(err);
 			});
 		}
 	},
