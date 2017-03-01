@@ -77,7 +77,11 @@ var commands = {
 			if (args.length > 1) {
 				args.splice(0, 1);
 				let script = args.join(` `);
-				send(msg.channel, eval(script), {code: `JavaScript`}, 0);
+				try {
+					send(msg.channel, eval(script), {code: `JavaScript`}, 0);
+				} catch (e) {
+					send(msg.channel, e, {code: `JavaScript`}, 0);
+				}
 			}
 		}
 	},
