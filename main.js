@@ -65,11 +65,17 @@ bot.on(`message`, msg => {
 	}
 
 	//Check if user has permissions
-	if (canUse === undefined && !(a.id === config.ownerID || permissions.default.commands.includes(command) || permissions.admin.users.includes(a.id) || arrShare(permissions.admin.roles, msg.member.roles.array()))) {
+	let userRoles = [];
+	if (canUse === undefined) {
+		msg.member.roles.array().forEach(element => {
+			userRoles.push(element.id);
+		});
+	}
+	if (canUse === undefined && !(a.id === config.ownerID || permissions.default.commands.includes(command) || permissions.admin.users.includes(a.id) || arrShare(permissions.admin.roles, userRoles))) {
 		//Iterate through all permissions and check to see if both the command and the user is in any group
 		let hasPerm = false;
 		for (let i = 3; i < permissions.length; i++) {
-			if (permissions[i].commands.includes(command) && (permissions[i].users.includes(a.id) || arrShare(permissions[i].roles, msg.member.roles.array()))) {
+			if (permissions[i].commands.includes(command) && (permissions[i].users.includes(a.id) || arrShare(permissions[i].roles, userRoles)) {
 				hasPerm = true;
 			}
 		}
