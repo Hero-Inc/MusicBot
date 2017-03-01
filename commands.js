@@ -47,7 +47,7 @@ function getAllIds (plid, token, idList, cb) {
 			results.items.forEach(element => {
 				idList.push(element.contentDetails.videoId);
 			});
-			if (results.nextPageToken) {
+			if (results.nextPageToken !== undefined) {
 				getAllIds(plid, results.nextPageToken, idList, cb);
 			} else {
 				cb(null, idList);
