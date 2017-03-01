@@ -519,8 +519,8 @@ var commands = {
 			let id = msg.channel.guild.id;
 			if (queue[id].length > 1) {
 				//If they haven't entered any number set it to clear the whole queue
-				let start = typeof args[1] !== undefined ? Number(args[1]) : 1;
-				let end = typeof args[2] !== undefined ? Number(args[2]) : queue[id].length - 1;
+				let start = args[1] === undefined ? 1 : Number(args[1]);
+				let end = args[2] === undefined ? (queue[id].length - 1) : Number(args[2]);
 
 				//Make sure that the numbers are correct and clear the queue
 				if (start > 0 && start < end && end > 0 && end < queue[id].length) {
