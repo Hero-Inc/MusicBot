@@ -157,7 +157,7 @@ var commands = {
 			} else {
 				//Display specific command help
 				if (commands[args[1]] !== undefined) {
-					send(msg.channel, config.cmdPrefix + commands[args[1]].use + `\n -` + commands[args[1]].longHelp, {
+					send(msg.channel, `${config.cmdPrefix}${commands[args[1]].use} \n - ${commands[args[1]].longHelp}`, {
 						code: `Markdown`
 					}, 0);
 				} else {
@@ -253,7 +253,7 @@ var commands = {
 						ytdl.getInfo(args[1], (err, info) => {
 							if (err) {
 								//uh oh that video didn't work
-								send(msg.channel, `Error adding video: ` + err, {code: true}, 20000);
+								send(msg.channel, `Error adding video: ${err}`, {code: true}, 20000);
 								return console.log(err);
 							}
 
@@ -270,7 +270,7 @@ var commands = {
 								}
 
 								//It's in the queue
-								send(msg.channel, `Enqueued ` + info.title, 8000);
+								send(msg.channel, `Enqueued ${info.title}`, 8000);
 
 								//A new video has been added lets check if we should start downloading that
 								if (queue[id].length === 1) {
@@ -369,7 +369,7 @@ var commands = {
 										queue[id].push(info);
 									}
 
-									send(msg.channel, `Enqueued ` + info.title, 5000);
+									send(msg.channel, `Enqueued ${info.title}`, 5000);
 
 									//A new video has been added lets check if we should start downloading that
 									if (queue[id].length === 1) {
@@ -386,7 +386,7 @@ var commands = {
 				}
 			} else {
 				//They entered the command on it's own
-				send(msg.channel, `Incorrect syntax, type '` + config.cmdPrefix + `help play' to learn more`, 20000);
+				send(msg.channel, `Incorrect syntax, type '${config.cmdPrefix}help play' to learn more`, 20000);
 			}
 		}
 	},
@@ -399,7 +399,7 @@ var commands = {
 		longHelp: `Shows the title of the youtube video currently playing`,
 		exe: (bot, msg, ...args) => {
 			if (queue[msg.channel.guild.id].length > 0) {
-				send(msg.channel, `Currently playing: ` + queue[msg.channel.guild.id][0].title, 10000);
+				send(msg.channel, `Currently playing: ${queue[msg.channel.guild.id][0].title}`, 10000);
 			} else {
 				send(msg.channel, `Nothing is playing right now`, 10000);
 			}
@@ -424,7 +424,7 @@ var commands = {
 					if (bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher !== undefined) {
 						bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher.setVolume(vol);
 					}
-					send(msg.channel, `Volume set to ` + (vol * 100) + `%`, 8000);
+					send(msg.channel, `Volume set to ${vol * 100}%`, 8000);
 				} else {
 					send(msg.channel, `Please enter a number between 0 and 100, inclusive`, 8000);
 				}
@@ -666,7 +666,7 @@ var commands = {
 					for (let i = 0; i < Number(algorithm[0]); i++) {
 						total += Math.floor(Math.random() * Number(algorithm[1])) + 1;
 					}
-					send(msg.channel, `Total rolled: ` + total, 0);
+					send(msg.channel, `Total rolled: ${total}`, 0);
 				} else {
 					send(msg.channel, `Incorrect syntax`, 5000);
 				}
