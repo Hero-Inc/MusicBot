@@ -7,14 +7,6 @@
     "bufferutil": "^2.0.1",
     "cleverbot-node": "^0.3.3",
     "discord.js": "^11.0.0",
-<<<<<<< HEAD
-    "node-opus": "^0.2.0",
-    "googleapis": "^16.1.0",
-    "ytdl-core": "^0.8.0"
-  },
-  "devDependencies": {
-      "opusscript": "^0.0.1"
-=======
     "erlpack": "github:hammerandchisel/erlpack",
     "googleapis": "^16.1.0",
     "node-opus": "^0.2.0",
@@ -23,7 +15,6 @@
   },
   "devDependencies": {
     "opusscript": "^0.0.1"
->>>>>>> master
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
