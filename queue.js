@@ -11,7 +11,7 @@ queue = {
 	next: (id, bot, msg) => {
 		//Make sure theres actually another song to download
 		if (queue[id].length > 0) {
-			let file = path.join(__dirname + `/audioFiles/`, queue[id][0].video_id + `.complete`);
+			let file = path.join(`${__dirname}/audioFiles/`, `${queue[id][0].video_id}.complete`);
 			fs.access(file, err => {
 				if (err) {
 					//get some audio from some metadata
@@ -46,7 +46,7 @@ queue = {
 
 	play: (id, bot, file, msg) => {
 		//start playing the audio
-		let stream = bot.voiceConnections.get(id).playFile(file, {volume: queue[`vol` + id]});
+		let stream = bot.voiceConnections.get(id).playFile(file, {volume: queue[`vol${id}`]});
 
 		//tell the users what we're playing
 		stream.once(`start`, () => {
@@ -58,7 +58,7 @@ queue = {
 			//kick out the currently playing song - which should actually be ended if this function is called
 			queue[id].splice(0, 1);
 
-			lib.log(`music`, `Ended stream, reason: ` + reason);
+			lib.log(`music`, `Ended stream, reason: ${reason}`);
 			queue.next(id, bot, msg);
 		});
 	},

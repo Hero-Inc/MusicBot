@@ -146,7 +146,7 @@ var commands = {
 						continue;
 					}
 
-					helpString += config.cmdPrefix + commands[cmd].use + `\n  # ` + commands[cmd].shortHelp + `\n`;
+					helpString += `${config.cmdPrefix}${commands[cmd].use}\n - ${commands[cmd].shortHelp}\n`;
 				}
 
 				//Reply in the channel with the help displayed as a code block
@@ -188,8 +188,8 @@ var commands = {
 					queue[id] = [];
 				}
 				//Default volume of 25%
-				if (queue[`vol` + id] === undefined) {
-					queue[`vol` + id] = config.defaultVolume;
+				if (queue[`vol${id}`] === undefined) {
+					queue[`vol${id}`] = config.defaultVolume;
 				}
 				//Tell the user the bot failed to join the channel and log the error
 			}, (err) => {
@@ -418,7 +418,7 @@ var commands = {
 				let vol = Math.round(Number(args[1])) / 100;
 				if (vol >= 0 && vol <= 1) {
 					//Set the volume in the queue object for future streams
-					queue[`vol` + msg.channel.guild.id] = vol;
+					queue[`vol${msg.channel.guild.id}`] = vol;
 					//set the volume of the current stream if there is one
 					if (bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher !== undefined) {
 						bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher.setVolume(vol);
@@ -502,10 +502,10 @@ var commands = {
 				let len = queue[id].length < 12 ? queue[id].length : 11;
 				//Iterate through all the items in this servers queue and add them to the message
 				for (let i = 0; i < len; i++) {
-					compMsg += `\n` + i + `. ` + queue[id][i].title;
+					compMsg += `\n${i}. ${queue[id][i].title}`;
 				}
 				if (queue[id].length > 12) {
-					compMsg += `\n\n And ` + (queue[id].length - 11) + ` more`;
+					compMsg += `\n\n And ${queue[id].length - 11} more`;
 				}
 				//lib.send the compiled queue message to the server
 				lib.send(msg.channel, compMsg, 30000);
@@ -644,7 +644,7 @@ var commands = {
 			let compMsg = `List of groups`;
 			for (var key in permissions) {
 				if (permissions.hasOwnProperty(key)) {
-					compMsg += `\n` + key;
+					compMsg += `\n${key}`;
 				}
 			}
 			lib.send(msg.channel, compMsg, {code: true}, 10000);
@@ -870,13 +870,13 @@ var commands = {
 		longHelp: `Returns a list of IDs for roles, text channels and voice channels on a server.`,
 		exe: (bot, msg, ...args) => {
 			let compMsg = ``;
-			compMsg += `IDs for server: ` + msg.channel.guild.id + `\n- Channels -`;
+			compMsg += `IDs for server: ${msg.channel.guild.name}(${msg.channel.guild.id})\n- Channels -`;
 			msg.channel.guild.channels.array().forEach(element => {
-				compMsg += `\n` + element.name + `: ` + element.id;
+				compMsg += `\n${element.name}: ${element.id}`;
 			});
 			compMsg += `\n- Roles-`;
 			msg.channel.guild.roles.array().forEach(element => {
-				compMsg += `\n` + element.name + `: ` + element.id;
+				compMsg += `\n${element.name}: ${element.id}`;
 			});
 			lib.send(msg.channel, compMsg, {code: true}, 0);
 		}

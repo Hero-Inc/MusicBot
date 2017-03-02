@@ -10,7 +10,7 @@ module.exports = {
 				message.delete(life);
 			}
 		}).catch(e => {
-			console.log(`[Error] sending message` + e);
+			console.log(`[Error] ${e}`);
 		});
 	},
 
