@@ -326,9 +326,8 @@ var commands = {
 										}
 									});
 								});
+								lib.send(msg.channel, `Enqued ${results.length} Items`, 8000);
 							});
-							//I wanted this to say after all videos have been added but getInfo is async and its looped so ¯\_(ツ)_/¯
-							//lib.send(msg.channel, `Added ` + pos + ` items from playlist`, 5000);
 						}
 						break;
 					case `search`:
