@@ -326,7 +326,7 @@ var commands = {
 										}
 									});
 								});
-								lib.send(msg.channel, `Enqued ${results.length} Items`, 8000);
+								lib.send(msg.channel, `Enqueued ${results.length} Items`, 8000);
 							});
 						}
 						break;
