@@ -4,7 +4,7 @@ const config = require(`./config.js`);
 const path = require(`path`);
 const fs = require(`fs`);
 const ytdl = require(`ytdl-core`);
-const send = require(`./lib.js`).send;
+const lib = require(`./lib.js`);
 
 queue = {
 	//download the next song in the queue
@@ -19,22 +19,22 @@ queue = {
 					let newFile = ``;
 					//pipe the audio into a file
 					video.on(`info`, (data) => {
-						console.log(`Started download of ` + queue[id][0].title);
+						console.log(`[Music] Started download of ${queue[id][0].title}`);
 						newFile = file.substring(0, (file.length - 9));
 						video.pipe(fs.createWriteStream(newFile));
 					});
 
 					//rename the file and play it
 					video.on(`end`, () => {
-						console.log(`Completed download of ` + queue[id][0].title);
+						console.log(`[Music] Completed download of ${queue[id][0].title}`);
 						fs.renameSync(newFile, file);
 						queue.play(id, bot, file, msg);
 					});
 
 					//Skip this song
 					video.on(`error`, (err) => {
-						send(msg.channel, `There was an error downloading: ` + queue[id][0].title, 8000);
-						console.log(err);
+						lib.send(msg.channel, `There was an error downloading: ${queue[id][0].title}`, 8000);
+						lib.log(`error`, `${err}`);
 						queue.next(id, bot, msg);
 					});
 				} else {
@@ -50,7 +50,7 @@ queue = {
 
 		//tell the users what we're playing
 		stream.once(`start`, () => {
-			send(msg.channel, `Now playing: ` + queue[id][0].title, 10000);
+			lib.send(msg.channel, `Now playing: ${queue[id][0].title}`, 10000);
 		});
 
 		//Song ended, start the next one
@@ -58,7 +58,7 @@ queue = {
 			//kick out the currently playing song - which should actually be ended if this function is called
 			queue[id].splice(0, 1);
 
-			console.log(`Ended stream, reason: ` + reason);
+			console.log(`[Music] Ended stream, reason: ` + reason);
 			queue.next(id, bot, msg);
 		});
 	},

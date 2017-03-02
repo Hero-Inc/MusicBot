@@ -14,17 +14,16 @@ const config = require(`./config.js`);
 const permissions = require(`./permissions.js`);
 
 //functions
-const send = require(`./lib.js`).send;
-const arrShare = require(`./lib.js`).arrShare;
+const lib = require(`./lib.js`);
 
 //start up procedures
 function initialise() {
 	//Set the bots 'playing ...'
-	bot.user.setGame(config.cmdPrefix + `help`);
+	bot.user.setGame(`${config.cmdPrefix}help`);
 	//Set the bots nickname on all servers
 	//bot.guilds.array.forEach((element) => {
 	//	element.members.get(bot.user.id).setNickname(config.botName).catch(e => {
-	//		console.log(e);
+	//		lib.log(e);
 	//	});
 	//});
 	//set the bots avatar
@@ -45,8 +44,12 @@ bot.on(`message`, msg => {
 	//If the message is from a bot, ignore it
 	if (a.bot) return;
 
+	msg.member.roles.array().forEach(element => {
+		userRoles.push(element.id);
+	});
+
 	//If the user is blacklisted ignore it
-	if (permissions.blacklist.users.includes(a.id) || arrShare(permissions.blacklist.roles, msg.member.roles.array())) return;
+	if (permissions.blacklist.users.includes(a.id) || lib.arrShare(permissions.blacklist.roles, msg.member.roles.array())) return;
 
 	//Here at Hero Inc we're Case Insensitive. we don't want any dirty uppercase letters
 	let command = msg.content.substring(1).split(` `)[0].toLowerCase();
@@ -65,17 +68,11 @@ bot.on(`message`, msg => {
 	}
 
 	//Check if user has permissions
-	let userRoles = [];
-	if (canUse === undefined) {
-		msg.member.roles.array().forEach(element => {
-			userRoles.push(element.id);
-		});
-	}
-	if (canUse === undefined && !(a.id === config.ownerID || permissions.default.commands.includes(command) || permissions.admin.users.includes(a.id) || arrShare(permissions.admin.roles, userRoles))) {
+	if (canUse === undefined && !(a.id === config.ownerID || permissions.default.commands.includes(command) || permissions.admin.users.includes(a.id) || lib.arrShare(permissions.admin.roles, userRoles))) {
 		//Iterate through all permissions and check to see if both the command and the user is in any group
 		let hasPerm = false;
 		for (let i = 3; i < permissions.length; i++) {
-			if (permissions[i].commands.includes(command) && (permissions[i].users.includes(a.id) || arrShare(permissions[i].roles, userRoles)) {
+			if (permissions[i].commands.includes(command) && (permissions[i].users.includes(a.id) || lib.arrShare(permissions[i].roles, userRoles)) {
 				hasPerm = true;
 			}
 		}
@@ -88,32 +85,31 @@ bot.on(`message`, msg => {
 	if (canUse === undefined) {
 		//Run the command
 		cmd[command].exe(bot, msg, ...msg.content.substring(1).split(` `));
-		let d = new Date();
-		console.log(`(` + d.getHours() + `:` + d.getMinutes() + `)` + ` [` + a.username + `#` + a.discriminator + `] - success - ` + msg.content);
+		lib.log(`command`, `${a.username}#${a.discriminator}: ${msg.content} - Success`);
 		if (cmd[command].deleteInvoking) {
-			msg.delete(config.deleteInvokingTime).catch(e => {console.log(e);});
+			msg.delete(config.deleteInvokingTime).catch(e => {lib.log(e);});
 		}
 	} else {
 		//Tell the user and the console that the command didn't work
-		send(msg.channel, `Command Failed: ` + canUse, {code: true}, 0);
-		console.log(`(` + d.getHours() + `:` + d.getMinutes() + `)` + ` [` + a.username + `#` + a.discriminator + `] - failed - ` + msg.content + ` | ` + canUse);
+		lib.send(msg.channel, `Command Failed: ${canUse}`, {code: true}, 0);
+		lib.log(`command`, `${a.username}#${a.discriminator}: ${msg.content} - Failed | ${canUse}`);
 	}
 });
 
 //If there is an error with the bot on the discord.js side, just log it to the console and continue working
 bot.on(`error`, (e) => {
-	console.log(e);
+	lib.log(`error`, e);
 });
 
 //Once the bot has logged in
 bot.on(`ready`, () => {
 	initialise();
-	console.log(`Bot Started`);
+	lib.log(`def`, `Bot Started`);
 });
 
 //Log the bot in
 bot.login(config.botToken).then((result) => {
-	console.log(`Connected`);
+	lib.log(`def`, `Connected`);
 }, (err) => {
-	console.log(err);
+	lib.log(`error`, err);
 });

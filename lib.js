@@ -10,8 +10,28 @@ module.exports = {
 				message.delete(life);
 			}
 		}).catch(e => {
-			console.log(`error sending message` + e);
+			console.log(`[Error] sending message` + e);
 		});
+	},
+
+	log: (type, msg) => {
+		let fullMsg = ``;
+		switch (type) {
+			case `music`:
+				fullMsg += `[Music]`
+				break;
+			case `command`:
+				fullMsg += `[Command]`
+				break;
+			case `error`:
+				fullMsg += `[Error]`
+				break;
+			default:
+				fullMsg += `[Generic]`
+		}
+		let d = new Date();
+		fullMsg += ` (${d.getHours}:${d.getMinutes} ${msg})`;
+		console.log(fullMsg);
 	},
 
 	//do two arrays share any values

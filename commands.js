@@ -3,7 +3,7 @@ const config = require(`./config.js`);
 const fs = require(`fs`);
 const ytdl = require(`ytdl-core`);
 const google = require(`googleapis`);
-const send = require(`./lib.js`).send;
+const lib = require(`./lib.js`);
 const clever = require(`cleverbot-node`);
 
 var permissions = require(`./permissions.js`);
@@ -78,9 +78,9 @@ var commands = {
 				args.splice(0, 1);
 				let script = args.join(` `);
 				try {
-					send(msg.channel, eval(script), {code: `JavaScript`}, 0);
+					lib.send(msg.channel, eval(script), {code: `JavaScript`}, 0);
 				} catch (e) {
-					send(msg.channel, e, {code: `JavaScript`}, 0);
+					lib.send(msg.channel, e, {code: `JavaScript`}, 0);
 				}
 			}
 		}
@@ -91,10 +91,10 @@ var commands = {
 		deleteInvoking: false,
 		use: `ping`,
 		shortHelp: `Replies with 'Pong!'`,
-		longHelp: `Simple command which sends the message 'Pong!' in the same channel the command was received on.`,
+		longHelp: `Simple command which lib.sends the message 'Pong!' in the same channel the command was received on.`,
 		exe: (bot, msg, ...args) => {
 			//Reply in message channel with Pong
-			send(msg.channel, `Pong!`, 0);
+			lib.send(msg.channel, `Pong!`, 0);
 		}
 	},
 
@@ -103,10 +103,10 @@ var commands = {
 		deleteInvoking: false,
 		use: `foo`,
 		shortHelp: `Replies with 'Bar!'`,
-		longHelp: `Simple command which sends the message 'Bar!' in the same channel the command was received on.`,
+		longHelp: `Simple command which lib.sends the message 'Bar!' in the same channel the command was received on.`,
 		exe: (bot, msg, ...args) => {
 			//Reply in message channel with Bar
-			send(msg.channel, `Bar!`, 0);
+			lib.send(msg.channel, `Bar!`, 0);
 		}
 	},
 
@@ -117,14 +117,14 @@ var commands = {
 		shortHelp: `Make the bot repeat things`,
 		longHelp: `Enter words and phrases after the echo command to cause the bot to repeat those words and phrases in the channel.`,
 		exe: (bot, msg, ...args) => {
-			//Take the message, strip the command and send the result back
+			//Take the message, strip the command and lib.send the result back
 			if (args.length > 1) {
 				let words = args;
 				words.splice(0, 1);
 				let sentence = words.join(` `);
-				send(msg.channel, sentence, 0);
+				lib.send(msg.channel, sentence, 0);
 			} else {
-				send(msg.channel, `Maybe you should say something for me to echo`, {}, 0);
+				lib.send(msg.channel, `Maybe you should say something for me to echo`, {}, 0);
 			}
 		}
 	},
@@ -150,18 +150,18 @@ var commands = {
 				}
 
 				//Reply in the channel with the help displayed as a code block
-				send(msg.channel, helpString, {
+				lib.send(msg.channel, helpString, {
 					code: `Markdown`,
 					split: true
 				}, 0);
 			} else {
 				//Display specific command help
 				if (commands[args[1]] !== undefined) {
-					send(msg.channel, `${config.cmdPrefix}${commands[args[1]].use} \n - ${commands[args[1]].longHelp}`, {
+					lib.send(msg.channel, `${config.cmdPrefix}${commands[args[1]].use} \n - ${commands[args[1]].longHelp}`, {
 						code: `Markdown`
 					}, 0);
 				} else {
-					send(msg.channel, `Sorry, that command doesn't exist`, 0);
+					lib.send(msg.channel, `Sorry, that command doesn't exist`, 0);
 				}
 			}
 		}
@@ -179,7 +179,7 @@ var commands = {
 			let id = msg.channel.guild.id;
 			//Hey I can't be summoned to nowhere
 			if (voiceChannel === undefined) {
-				return send(msg.channel, `You must be in a voice channel`, 5000);
+				return lib.send(msg.channel, `You must be in a voice channel`, 5000);
 			}
 			//Join the voice channel
 			voiceChannel.join().then((connection) => {
@@ -193,11 +193,11 @@ var commands = {
 				}
 				//Tell the user the bot failed to join the channel and log the error
 			}, (err) => {
-				send(msg.channel, `Failed to join channel`, 5000);
-				console.log(err);
+				lib.send(msg.channel, `Failed to join channel`, 5000);
+				lib.log(`error`, `${err}`);
 			}).catch(err => {
-				send(msg.channel, `Connection issue`, 5000);
-				console.log(err);
+				lib.send(msg.channel, `Connection issue`, 5000);
+				lib.log(`error`, `${err}`);
 			});
 		}
 	},
@@ -253,8 +253,8 @@ var commands = {
 						ytdl.getInfo(args[1], (err, info) => {
 							if (err) {
 								//uh oh that video didn't work
-								send(msg.channel, `Error adding video: ${err}`, {code: true}, 20000);
-								return console.log(err);
+								lib.send(msg.channel, `Error adding video: ${err}`, {code: true}, 20000);
+								return lib.log(`error`, `${err}`);
 							}
 
 							//Make sure the video isn't too long acording to our config
@@ -270,14 +270,14 @@ var commands = {
 								}
 
 								//It's in the queue
-								send(msg.channel, `Enqueued ${info.title}`, 8000);
+								lib.send(msg.channel, `Enqueued ${info.title}`, 8000);
 
 								//A new video has been added lets check if we should start downloading that
 								if (queue[id].length === 1) {
 									queue.next(id, bot, msg);
 								}
 							} else {
-								send(msg.channel, `Sorry, that video exceeds the max video length`, 5000);
+								lib.send(msg.channel, `Sorry, that video exceeds the max video length`, 5000);
 							}
 						});
 						break;
@@ -295,8 +295,8 @@ var commands = {
 							getAllIds(plId, (err, results) => {
 								if (err) {
 									//return errors if any
-									send(msg.channel, `There was an error adding this playlist`, 5000);
-									return console.log(err);
+									lib.send(msg.channel, `There was an error adding this playlist`, 5000);
+									return lib.log(`error`, `${err}`);
 								}
 
 								let pos = 0;
@@ -305,7 +305,7 @@ var commands = {
 									//Get the video metadata
 									ytdl.getInfo(`www.youtube.com/watch?v=` + element, (err, info) => {
 										if (err) {
-											return console.log(err);
+											return lib.log(`error`, `${err}`);
 										}
 										//Check if it exceeds our configured time limit
 										if (info.length_seconds <= config.maxVideoLength) {
@@ -328,7 +328,7 @@ var commands = {
 								});
 							});
 							//I wanted this to say after all videos have been added but getInfo is async and its looped so ¯\_(ツ)_/¯
-							//send(msg.channel, `Added ` + pos + ` items from playlist`, 5000);
+							//lib.send(msg.channel, `Added ` + pos + ` items from playlist`, 5000);
 						}
 						break;
 					case `search`:
@@ -348,15 +348,15 @@ var commands = {
 							fields: `items/id/videoId`
 						}, (err, results) => {
 							if (err) {
-								send(msg.channel, `Error searching for video`, 8000);
-								return console.log(err);
+								lib.send(msg.channel, `Error searching for video`, 8000);
+								return lib.log(`error`, `${err}`);
 							}
 
 							//Get some metadata for the returned video
 							ytdl.getInfo(`www.youtube.com/watch?v=` + results.items[0].id.videoId, (err, info) => {
 								if (err) {
-									send(msg.channel, `Error adding video`, 8000);
-									return console.log(err);
+									lib.send(msg.channel, `Error adding video`, 8000);
+									return lib.log(`error`, `${err}`);
 								}
 								//Check if the video is too long
 								if (info.length_seconds < config.maxVideoLength) {
@@ -369,24 +369,24 @@ var commands = {
 										queue[id].push(info);
 									}
 
-									send(msg.channel, `Enqueued ${info.title}`, 5000);
+									lib.send(msg.channel, `Enqueued ${info.title}`, 5000);
 
 									//A new video has been added lets check if we should start downloading that
 									if (queue[id].length === 1) {
 										queue.next(id, bot, msg);
 									}
 								} else {
-									return send(msg.channel, `Sorry, that video exceeds the time limit`, 8000);
+									return lib.send(msg.channel, `Sorry, that video exceeds the time limit`, 8000);
 								}
 							});
 						});
 						break;
 					default:
-						send(msg.channel, `Only Youtube links or search strings please`, 8000);
+						lib.send(msg.channel, `Only Youtube links or search strings please`, 8000);
 				}
 			} else {
 				//They entered the command on it's own
-				send(msg.channel, `Incorrect syntax, type '${config.cmdPrefix}help play' to learn more`, 20000);
+				lib.send(msg.channel, `Incorrect syntax, type '${config.cmdPrefix}help play' to learn more`, 20000);
 			}
 		}
 	},
@@ -399,9 +399,9 @@ var commands = {
 		longHelp: `Shows the title of the youtube video currently playing`,
 		exe: (bot, msg, ...args) => {
 			if (queue[msg.channel.guild.id].length > 0) {
-				send(msg.channel, `Currently playing: ${queue[msg.channel.guild.id][0].title}`, 10000);
+				lib.send(msg.channel, `Currently playing: ${queue[msg.channel.guild.id][0].title}`, 10000);
 			} else {
-				send(msg.channel, `Nothing is playing right now`, 10000);
+				lib.send(msg.channel, `Nothing is playing right now`, 10000);
 			}
 		}
 	},
@@ -424,12 +424,12 @@ var commands = {
 					if (bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher !== undefined) {
 						bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher.setVolume(vol);
 					}
-					send(msg.channel, `Volume set to ${vol * 100}%`, 8000);
+					lib.send(msg.channel, `Volume set to ${vol * 100}%`, 8000);
 				} else {
-					send(msg.channel, `Please enter a number between 0 and 100, inclusive`, 8000);
+					lib.send(msg.channel, `Please enter a number between 0 and 100, inclusive`, 8000);
 				}
 			} else {
-				send(msg.channel, `Incorrect syntax`, 8000);
+				lib.send(msg.channel, `Incorrect syntax`, 8000);
 			}
 		}
 	},
@@ -444,7 +444,7 @@ var commands = {
 			let player = bot.voiceConnections.get(msg.channel.guild.id).player;
 			//Pause the bot's stream on the current server if it's not already paused
 			if (player.dispatcher === undefined || player.dispatcher.paused) {
-				send(msg.channel, `I'm not playing anything`, 5000);
+				lib.send(msg.channel, `I'm not playing anything`, 5000);
 			} else {
 				player.dispatcher.pause();
 			}
@@ -461,14 +461,14 @@ var commands = {
 			let player = bot.voiceConnections.get(msg.channel.guild.id).player;
 
 			if (player.dispatcher === undefined) {
-				return send(msg.channel, `There's nothing to resume`, 8000);
+				return lib.send(msg.channel, `There's nothing to resume`, 8000);
 			}
 
 			//Resume the bot's stream on the current server if it's not already playing
 			if (player.dispatcher.paused) {
 				player.dispatcher.resume();
 			} else {
-				send(msg.channel, `I'm not paused`, 8000);
+				lib.send(msg.channel, `I'm not paused`, 8000);
 			}
 		}
 	},
@@ -482,7 +482,7 @@ var commands = {
 		exe: (bot, msg, ...args) => {
 			//if there is currently a stream playing, we just end it
 			if (bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher === undefined) {
-				send(msg.channel, `You can only skip an item when I'm playing something`, 8000);
+				lib.send(msg.channel, `You can only skip an item when I'm playing something`, 8000);
 			} else {
 				bot.voiceConnections.get(msg.channel.guild.id).player.dispatcher.end(`Skipped`);
 			}
@@ -508,10 +508,10 @@ var commands = {
 				if (queue[id].length > 12) {
 					compMsg += `\n\n And ` + (queue[id].length - 11) + ` more`;
 				}
-				//Send the compiled queue message to the server
-				send(msg.channel, compMsg, 30000);
+				//lib.send the compiled queue message to the server
+				lib.send(msg.channel, compMsg, 30000);
 			} else {
-				send(msg.channel, `There is nothing in the queue`, 5000);
+				lib.send(msg.channel, `There is nothing in the queue`, 5000);
 			}
 		}
 	},
@@ -532,12 +532,12 @@ var commands = {
 				//Make sure that the numbers are correct and clear the queue
 				if (start > 0 && start < end && end > 0 && end < queue[id].length) {
 					queue[id].splice(start, end - start);
-					msg.channel.send(`Queue Cleared`);
+					msg.channel.lib.send(`Queue Cleared`);
 				} else {
-					send(msg.channel, `Please enter valid start/end numbers`, 5000);
+					lib.send(msg.channel, `Please enter valid start/end numbers`, 5000);
 				}
 			} else {
-				send(msg.channel, `There's nothing in the queue`, 5000);
+				lib.send(msg.channel, `There's nothing in the queue`, 5000);
 			}
 		}
 	},
@@ -555,12 +555,12 @@ var commands = {
 				//Make sure they entered a good number and get rid of that item
 				if (!isNaN(num) && num > 0 && num < queue[id].length) {
 					queue[id].splice(num, 1);
-					send(msg.channel, `Removed item from queue`, 5000);
+					lib.send(msg.channel, `Removed item from queue`, 5000);
 				} else {
-					send(msg.channel, `Please enter a valid queue number`, 8000);
+					lib.send(msg.channel, `Please enter a valid queue number`, 8000);
 				}
 			} else {
-				send(msg.channel, `The queue is empty`, 5000);
+				lib.send(msg.channel, `The queue is empty`, 5000);
 			}
 		}
 	},
@@ -583,12 +583,12 @@ var commands = {
 					let hold = queue[id][org];
 					queue[id].splice(org, 1);
 					queue[id].splice(fin, 0, hold);
-					send(msg.channel, `Moved the video`, 5000);
+					lib.send(msg.channel, `Moved the video`, 5000);
 				} else {
-					send(msg.channel, `Please enter valid orgin and finish queue positions`, 8000);
+					lib.send(msg.channel, `Please enter valid orgin and finish queue positions`, 8000);
 				}
 			} else {
-				send(msg.channel, `There's not enough videos to move`, 5000);
+				lib.send(msg.channel, `There's not enough videos to move`, 5000);
 			}
 		}
 	},
@@ -612,9 +612,9 @@ var commands = {
 
 					queue[id].splice(num, 0, hold);
 				}
-				send(msg.channel, `Shuffled`, 5000);
+				lib.send(msg.channel, `Shuffled`, 5000);
 			} else {
-				send(msg.channel, `There is not enough items to shuffle in the queue`, 8000);
+				lib.send(msg.channel, `There is not enough items to shuffle in the queue`, 8000);
 			}
 
 		}
@@ -628,7 +628,7 @@ var commands = {
 		longHelp: `Disconnects the bot from all servers and ends the bots proccess.\nIt will need to be restarted manually.`,
 		exe: (bot, msg, ...args) => {
 			//Tell the user they are leaving, destroy the bot's client connection and then kill the node process
-			send(msg.channel, `:wave:`, 5000);
+			lib.send(msg.channel, `:wave:`, 5000);
 			bot.destroy();
 			process.exit();
 		}
@@ -648,7 +648,7 @@ var commands = {
 					compMsg += `\n` + key;
 				}
 			}
-			send(msg.channel, compMsg, {code: true}, 10000);
+			lib.send(msg.channel, compMsg, {code: true}, 10000);
 		}
 	},
 
@@ -666,12 +666,12 @@ var commands = {
 					for (let i = 0; i < Number(algorithm[0]); i++) {
 						total += Math.floor(Math.random() * Number(algorithm[1])) + 1;
 					}
-					send(msg.channel, `Total rolled: ${total}`, 0);
+					lib.send(msg.channel, `Total rolled: ${total}`, 0);
 				} else {
-					send(msg.channel, `Incorrect syntax`, 5000);
+					lib.send(msg.channel, `Incorrect syntax`, 5000);
 				}
 			} else {
-				send(msg.channel, `Incorrect syntax`, 5000);
+				lib.send(msg.channel, `Incorrect syntax`, 5000);
 			}
 		}
 	},
@@ -688,28 +688,28 @@ var commands = {
 				//read the tags file
 				fs.readFile(`tags.json`, (err, data) => {
 					if (err) {
-						console.log(err);
-						return send(msg.channel, `There was an error reading tags`, 8000);
+						lib.log(`error`, `${err}`);
+						return lib.send(msg.channel, `There was an error reading tags`, 8000);
 					}
 
 					let tags = JSON.parse(data);
 
 					//Check to see if there are any tags for this server
 					if (tags[msg.channel.guild.id] === undefined || tags[msg.channel.guild.id].length === 0) {
-						return send(msg.channel, `There are no tags on this server`, 8000);
+						return lib.send(msg.channel, `There are no tags on this server`, 8000);
 					}
 
 					let tagname = args[1].toLowerCase();
 
-					//check if the argument they entered is a valid tag name, send the tag message if it is
+					//check if the argument they entered is a valid tag name, lib.send the tag message if it is
 					if (tags[msg.channel.guild.id][tagname] !== undefined) {
-						send(msg.channel, tags[msg.channel.guild.id][tagname], 0);
+						lib.send(msg.channel, tags[msg.channel.guild.id][tagname], 0);
 					} else {
-						send(msg.channel, `That tag doesnt exist`, 0);
+						lib.send(msg.channel, `That tag doesnt exist`, 0);
 					}
 				});
 			} else {
-				send(msg.channel, `Invalid syntax`, 5000);
+				lib.send(msg.channel, `Invalid syntax`, 5000);
 			}
 		}
 	},
@@ -727,8 +727,8 @@ var commands = {
 				fs.readFile(`tags.json`, (err, data) => {
 					let tagname = args[1].toLowerCase();
 					if (err) {
-						console.log(err);
-						return send(msg.channel, `There was an error checking tags`, 8000);
+						lib.log(`error`, `${err}`);
+						return lib.send(msg.channel, `There was an error checking tags`, 8000);
 					}
 
 					let tags = JSON.parse(data);
@@ -752,17 +752,17 @@ var commands = {
 						//Write the new tag list to the tags file including the new tag
 						fs.writeFile(`tags.json`, JSON.stringify(tags), (err) => {
 							if (err) {
-								console.log(err);
-								return send(msg.channel, `There was an error adding the tag`, 8000);
+								lib.log(`error`, `${err}`);
+								return lib.send(msg.channel, `There was an error adding the tag`, 8000);
 							}
-							send(msg.channel, `Tag added`, 5000);
+							lib.send(msg.channel, `Tag added`, 5000);
 						});
 					} else {
-						send(msg.channel, `Sorry, that tag already exists`, 8000);
+						lib.send(msg.channel, `Sorry, that tag already exists`, 8000);
 					}
 				});
 			} else {
-				send(msg.channel, `Invalid syntax`, 8000);
+				lib.send(msg.channel, `Invalid syntax`, 8000);
 			}
 		}
 	},
@@ -779,15 +779,15 @@ var commands = {
 				//read the tags file
 				fs.readFile(`tags.json`, (err, data) => {
 					if (err) {
-						console.log(err);
-						return send(msg.channel, `There was an error reading tags`, 8000);
+						lib.log(`error`, `${err}`);
+						return lib.send(msg.channel, `There was an error reading tags`, 8000);
 					}
 
 					let tags = JSON.parse(data);
 
 					//Check if there are any tags for this server
 					if (tags[msg.channel.guild.id] === undefined || tags[msg.channel.guild.id].length === 0) {
-						return send(msg.channel, `There are no tags on this server`, 8000);
+						return lib.send(msg.channel, `There are no tags on this server`, 8000);
 					}
 
 					let tagname = args[1].toLowerCase();
@@ -800,17 +800,17 @@ var commands = {
 						//write the new taglist with removed tag to the tags file
 						fs.writeFile(`tags.json`, JSON.stringify(tags), (err) => {
 							if (err) {
-								console.log(err);
-								return send(msg.channel, `There was an error deleting the tag`, 8000);
+								lib.log(`error`, `${err}`);
+								return lib.send(msg.channel, `There was an error deleting the tag`, 8000);
 							}
-							send(msg.channel, `Tag deleted`, 5000);
+							lib.send(msg.channel, `Tag deleted`, 5000);
 						});
 					} else {
-						send(msg.channel, `That tag doesnt exist`, 0);
+						lib.send(msg.channel, `That tag doesnt exist`, 0);
 					}
 				});
 			} else {
-				send(msg.channel, `Invalid syntax`, 5000);
+				lib.send(msg.channel, `Invalid syntax`, 5000);
 			}
 		}
 	},
@@ -825,21 +825,21 @@ var commands = {
 			//read the tags file
 			fs.readFile(`tags.json`, (err, data) => {
 				if (err) {
-					console.log(err);
-					return send(msg.channel, `There was an error reading tags`, 8000);
+					lib.log(`error`, `${err}`);
+					return lib.send(msg.channel, `There was an error reading tags`, 8000);
 				}
 				let tags = JSON.parse(data);
 				//Check if there are any tags on this server
 				if (tags[msg.channel.guild.id] !== undefined || tags[msg.channel.guild.id].length === 0) {
 					let message = `Tags available on this server: `;
-					//iterate through all the tags on this server and add them to the message to send
+					//iterate through all the tags on this server and add them to the message to lib.send
 					//This only goes over the keys i.e., the tagnames
 					Object.keys(tags[msg.channel.guild.id]).forEach(element => {
 						message += `\n - ` + element;
 					});
-					send(msg.channel, message, {code: true, split: true}, 0);
+					lib.send(msg.channel, message, {code: true, split: true}, 0);
 				} else {
-					send(msg.channel, `No tags for this server exist, create some with addTag`, 10000);
+					lib.send(msg.channel, `No tags for this server exist, create some with addTag`, 10000);
 				}
 			});
 		}
@@ -850,15 +850,15 @@ var commands = {
 		deleteInvoking: false,
 		use: `clever <message>`,
 		shortHelp: `Talk with the bot`,
-		longHelp: `Sends the provided message to the cleverbot service and replies with the message returned from cleverbot.`,
+		longHelp: `lib.sends the provided message to the cleverbot service and replies with the message returned from cleverbot.`,
 		exe: (bot, msg, ...args) => {
 			if (args.length > 1) {
 				args.splice(0, 1);
 				cleverbot.write(args.join(` `), response => {
-					send(msg.channel, response.output, 0);
+					lib.send(msg.channel, response.output, 0);
 				});
 			} else {
-				send(msg.channel, `Don't be shy`, 0);
+				lib.send(msg.channel, `Don't be shy`, 0);
 			}
 		}
 	},
@@ -879,7 +879,7 @@ var commands = {
 			msg.channel.guild.roles.array().forEach(element => {
 				compMsg += `\n` + element.name + `: ` + element.id;
 			});
-			send(msg.channel, compMsg, {code: true}, 0);
+			lib.send(msg.channel, compMsg, {code: true}, 0);
 		}
 	}
 };
