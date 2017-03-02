@@ -19,14 +19,14 @@ queue = {
 					let newFile = ``;
 					//pipe the audio into a file
 					video.on(`info`, (data) => {
-						console.log(`[Music] Started download of ${queue[id][0].title}`);
+						lib.log(`music`, `Started download of ${queue[id][0].title}`);
 						newFile = file.substring(0, (file.length - 9));
 						video.pipe(fs.createWriteStream(newFile));
 					});
 
 					//rename the file and play it
 					video.on(`end`, () => {
-						console.log(`[Music] Completed download of ${queue[id][0].title}`);
+						lib.log(`music`, `Completed download of ${queue[id][0].title}`);
 						fs.renameSync(newFile, file);
 						queue.play(id, bot, file, msg);
 					});
@@ -58,7 +58,7 @@ queue = {
 			//kick out the currently playing song - which should actually be ended if this function is called
 			queue[id].splice(0, 1);
 
-			console.log(`[Music] Ended stream, reason: ` + reason);
+			lib.log(`music`, `Ended stream, reason: ` + reason);
 			queue.next(id, bot, msg);
 		});
 	},
