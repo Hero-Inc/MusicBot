@@ -691,20 +691,26 @@ var commands = {
 						return lib.send(msg.channel, `There was an error reading tags`, 8000);
 					}
 
-					let tags = JSON.parse(data);
+					let tags;
+					try {
+						tags = JSON.parse(data);
+					} catch (e) {
+						lib.log(`error`, e);
+						tags = {};
+					} finally {
+						//Check to see if there are any tags for this server
+						if (tags[msg.channel.guild.id] === undefined || tags[msg.channel.guild.id].length === 0) {
+							return lib.send(msg.channel, `There are no tags on this server`, 8000);
+						}
 
-					//Check to see if there are any tags for this server
-					if (tags[msg.channel.guild.id] === undefined || tags[msg.channel.guild.id].length === 0) {
-						return lib.send(msg.channel, `There are no tags on this server`, 8000);
-					}
+						let tagname = args[1].toLowerCase();
 
-					let tagname = args[1].toLowerCase();
-
-					//check if the argument they entered is a valid tag name, lib.send the tag message if it is
-					if (tags[msg.channel.guild.id][tagname] !== undefined) {
-						lib.send(msg.channel, tags[msg.channel.guild.id][tagname], 0);
-					} else {
-						lib.send(msg.channel, `That tag doesnt exist`, 0);
+						//check if the argument they entered is a valid tag name, lib.send the tag message if it is
+						if (tags[msg.channel.guild.id][tagname] !== undefined) {
+							lib.send(msg.channel, tags[msg.channel.guild.id][tagname], 0);
+						} else {
+							lib.send(msg.channel, `That tag doesnt exist`, 0);
+						}
 					}
 				});
 			} else {
@@ -730,34 +736,40 @@ var commands = {
 						return lib.send(msg.channel, `There was an error checking tags`, 8000);
 					}
 
-					let tags = JSON.parse(data);
+					let tags;
+					try {
+						tags = JSON.parse(data);
+					} catch (e) {
+						lib.log(`error`, e);
+						tags = {};
+					} finally {
+						//Create an object in the tags list for this server if one does not already exist
+						if (tags[msg.channel.guild.id] === undefined) {
+							tags[msg.channel.guild.id] = {};
+						}
 
-					//Create an object in the tags list for this server if one does not already exist
-					if (tags[msg.channel.guild.id] === undefined) {
-						tags[msg.channel.guild.id] = {};
-					}
+						//Check if this tag already exists
+						if (tags[msg.channel.guild.id][tagname] === undefined) {
+							//It doesnt exist, we can add it
+							//Get the message as a single string on it's own
+							let message = args;
+							message.splice(0,2);
+							message = message.join(` `);
 
-					//Check if this tag already exists
-					if (tags[msg.channel.guild.id][tagname] === undefined) {
-						//It doesnt exist, we can add it
-						//Get the message as a single string on it's own
-						let message = args;
-						message.splice(0,2);
-						message = message.join(` `);
+							//Add the message to this guilds tag list object
+							tags[msg.channel.guild.id][tagname] = message;
 
-						//Add the message to this guilds tag list object
-						tags[msg.channel.guild.id][tagname] = message;
-
-						//Write the new tag list to the tags file including the new tag
-						fs.writeFile(`tags.json`, JSON.stringify(tags), (err) => {
-							if (err) {
-								lib.log(`error`, `${err}`);
-								return lib.send(msg.channel, `There was an error adding the tag`, 8000);
-							}
-							lib.send(msg.channel, `Tag added`, 5000);
-						});
-					} else {
-						lib.send(msg.channel, `Sorry, that tag already exists`, 8000);
+							//Write the new tag list to the tags file including the new tag
+							fs.writeFile(`tags.json`, JSON.stringify(tags), (err) => {
+								if (err) {
+									lib.log(`error`, `${err}`);
+									return lib.send(msg.channel, `There was an error adding the tag`, 8000);
+								}
+								lib.send(msg.channel, `Tag added`, 5000);
+							});
+						} else {
+							lib.send(msg.channel, `Sorry, that tag already exists`, 8000);
+						}
 					}
 				});
 			} else {
@@ -782,30 +794,36 @@ var commands = {
 						return lib.send(msg.channel, `There was an error reading tags`, 8000);
 					}
 
-					let tags = JSON.parse(data);
+					let tags;
+					try {
+						tags = JSON.parse(data);
+					} catch (e) {
+						lib.log(`error`, e);
+						tags = {};
+					} finally {
+						//Check if there are any tags for this server
+						if (tags[msg.channel.guild.id] === undefined || tags[msg.channel.guild.id].length === 0) {
+							return lib.send(msg.channel, `There are no tags on this server`, 8000);
+						}
 
-					//Check if there are any tags for this server
-					if (tags[msg.channel.guild.id] === undefined || tags[msg.channel.guild.id].length === 0) {
-						return lib.send(msg.channel, `There are no tags on this server`, 8000);
-					}
+						let tagname = args[1].toLowerCase();
 
-					let tagname = args[1].toLowerCase();
+						//See if this tagname even exists on this server
+						if (tags[msg.channel.guild.id][tagname] !== undefined) {
+							//Remove it
+							delete tags[msg.channel.guild.id][tagname];
 
-					//See if this tagname even exists on this server
-					if (tags[msg.channel.guild.id][tagname] !== undefined) {
-						//Remove it
-						delete tags[msg.channel.guild.id][tagname];
-
-						//write the new taglist with removed tag to the tags file
-						fs.writeFile(`tags.json`, JSON.stringify(tags), (err) => {
-							if (err) {
-								lib.log(`error`, `${err}`);
-								return lib.send(msg.channel, `There was an error deleting the tag`, 8000);
-							}
-							lib.send(msg.channel, `Tag deleted`, 5000);
-						});
-					} else {
-						lib.send(msg.channel, `That tag doesnt exist`, 0);
+							//write the new taglist with removed tag to the tags file
+							fs.writeFile(`tags.json`, JSON.stringify(tags), (err) => {
+								if (err) {
+									lib.log(`error`, `${err}`);
+									return lib.send(msg.channel, `There was an error deleting the tag`, 8000);
+								}
+								lib.send(msg.channel, `Tag deleted`, 5000);
+							});
+						} else {
+							lib.send(msg.channel, `That tag doesnt exist`, 0);
+						}
 					}
 				});
 			} else {
@@ -827,18 +845,26 @@ var commands = {
 					lib.log(`error`, `${err}`);
 					return lib.send(msg.channel, `There was an error reading tags`, 8000);
 				}
-				let tags = JSON.parse(data);
-				//Check if there are any tags on this server
-				if (tags[msg.channel.guild.id] !== undefined || tags[msg.channel.guild.id].length === 0) {
-					let message = `Tags available on this server: `;
-					//iterate through all the tags on this server and add them to the message to lib.send
-					//This only goes over the keys i.e., the tagnames
-					Object.keys(tags[msg.channel.guild.id]).forEach(element => {
-						message += `\n - ` + element;
-					});
-					lib.send(msg.channel, message, {code: true, split: true}, 0);
-				} else {
-					lib.send(msg.channel, `No tags for this server exist, create some with addTag`, 10000);
+
+				let tags;
+				try {
+					tags = JSON.parse(data);
+				} catch (e) {
+					lib.log(`error`, e);
+					tags = {};
+				} finally {
+					//Check if there are any tags on this server
+					if (tags[msg.channel.guild.id] !== undefined || tags[msg.channel.guild.id].length === 0) {
+						let message = `Tags available on this server: `;
+						//iterate through all the tags on this server and add them to the message to lib.send
+						//This only goes over the keys i.e., the tagnames
+						Object.keys(tags[msg.channel.guild.id]).forEach(element => {
+							message += `\n - ` + element;
+						});
+						lib.send(msg.channel, message, {code: true, split: true}, 0);
+					} else {
+						lib.send(msg.channel, `No tags for this server exist, create some with addTag`, 10000);
+					}
 				}
 			});
 		}
