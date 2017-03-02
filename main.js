@@ -44,12 +44,13 @@ bot.on(`message`, msg => {
 	//If the message is from a bot, ignore it
 	if (a.bot) return;
 
+	let userRoles = [];
 	msg.member.roles.array().forEach(element => {
 		userRoles.push(element.id);
 	});
 
 	//If the user is blacklisted ignore it
-	if (permissions.blacklist.users.includes(a.id) || lib.arrShare(permissions.blacklist.roles, msg.member.roles.array())) return;
+	if (permissions.blacklist.users.includes(a.id) || lib.arrShare(permissions.blacklist.roles, userRoles)) return;
 
 	//Here at Hero Inc we're Case Insensitive. we don't want any dirty uppercase letters
 	let command = msg.content.substring(1).split(` `)[0].toLowerCase();
