@@ -119,6 +119,7 @@ bot.on(`ready`, () => {
 bot.login(config.botToken)
 	.then((result) => {
 		lib.log(`def`, `Connected`);
-	}, (err) => {
+	})
+	.catch((err) => {
 		lib.log(`error`, err);
 	});

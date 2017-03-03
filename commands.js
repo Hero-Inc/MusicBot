@@ -194,9 +194,6 @@ var commands = {
 						queue[`vol${id}`] = config.defaultVolume;
 					}
 					// Tell the user the bot failed to join the channel and log the error
-				}, (err) => {
-					lib.send(msg.channel, `Failed to join channel`, 5000);
-					lib.log(`error`, `${err}`);
 				})
 				.catch(err => {
 					lib.send(msg.channel, `Connection issue`, 5000);
