@@ -347,7 +347,7 @@ var commands = {
 							// Get the search string
 							let search = args;
 							search.splice(0, 1);
-							if (search.include(`--playnext`)) {
+							if (search.includes(`--playnext`)) {
 								search.splice(search.indexOf(`--playnext`), 1);
 							}
 							search = search.join(` `);
