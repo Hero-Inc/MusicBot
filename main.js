@@ -73,7 +73,7 @@ bot.on(`message`, msg => {
 		//Iterate through all permissions and check to see if both the command and the user is in any group
 		let hasPerm = false;
 		for (let i = 3; i < permissions.length; i++) {
-			if (permissions[i].commands.includes(command) && (permissions[i].users.includes(a.id) || lib.arrShare(permissions[i].roles, userRoles)) {
+			if (permissions[i].commands.includes(command) && (permissions[i].users.includes(a.id) || lib.arrShare(permissions[i].roles, userRoles))) {
 				hasPerm = true;
 			}
 		}
