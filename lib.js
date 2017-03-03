@@ -5,13 +5,15 @@ module.exports = {
 			life = options;
 			options = {};
 		}
-		channel.send(msg, options).then(message => {
-			if (life > 0) {
-				message.delete(life);
-			}
-		}).catch(e => {
-			console.log(`[Error] ${e}`);
-		});
+		channel.send(msg, options)
+			.then(message => {
+				if (life > 0) {
+					message.delete(life);
+				}
+			})
+			.catch(e => {
+				console.log(`[Error] ${e}`);
+			});
 	},
 
 	log: (type, msg) => {
@@ -38,7 +40,7 @@ module.exports = {
 	// Stolen code shhhh
 	/* eslint-disable */
 	arrShare: (target, search) => {
-		return search.some(function(v) {
+		return search.some(function (v) {
 			return target.indexOf(v) >= 0;
 		});
 	}

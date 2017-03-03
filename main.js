@@ -43,15 +43,17 @@ bot.on(`message`, msg => {
 	if (a.bot) return;
 
 	let userRoles = [];
-	msg.member.roles.array().forEach(element => {
-		userRoles.push(element.id);
-	});
+	msg.member.roles.array()
+		.forEach(element => {
+			userRoles.push(element.id);
+		});
 
 	// If the user is blacklisted ignore it
 	if (permissions.blacklist.users.includes(a.id) || lib.arrShare(permissions.blacklist.roles, userRoles)) return;
 
 	// Here at Hero Inc we're Case Insensitive. we don't want any dirty uppercase letters
-	let command = msg.content.substring(1).split(` `)[0].toLowerCase();
+	let command = msg.content.substring(1)
+		.split(` `)[0].toLowerCase();
 
 	// Create an undefined variable
 	let canUse;
@@ -62,7 +64,8 @@ bot.on(`message`, msg => {
 	}
 
 	// Check if the command requires voice channel sharing
-	if (canUse === undefined && cmd[command].voice && (msg.member.voiceChannel === undefined || bot.voiceConnections.get(msg.channel.guild.id) === undefined || msg.member.voiceChannel.id !== bot.voiceConnections.get(msg.channel.guild.id).channel.id)) {
+	if (canUse === undefined && cmd[command].voice && (msg.member.voiceChannel === undefined || bot.voiceConnections.get(msg.channel.guild.id) === undefined || msg.member.voiceChannel.id !== bot.voiceConnections.get(msg.channel.guild.id)
+			.channel.id)) {
 		canUse = `Must be in the same voice channel as the bot to use this command`;
 	}
 
@@ -83,14 +86,20 @@ bot.on(`message`, msg => {
 	// See if any of the checks above passed
 	if (canUse === undefined) {
 		// Run the command
-		cmd[command].exe(bot, msg, ...msg.content.substring(1).split(` `));
+		cmd[command].exe(bot, msg, ...msg.content.substring(1)
+			.split(` `));
 		lib.log(`command`, `${a.username}#${a.discriminator}: ${msg.content} - Success`);
 		if (cmd[command].deleteInvoking) {
-			msg.delete(config.deleteInvokingTime).catch(e => { lib.log(e); });
+			msg.delete(config.deleteInvokingTime)
+				.catch(e => {
+					lib.log(e);
+				});
 		}
 	} else {
 		// Tell the user and the console that the command didn't work
-		lib.send(msg.channel, `Command Failed: ${canUse}`, { code: true }, 0);
+		lib.send(msg.channel, `Command Failed: ${canUse}`, {
+			code: true,
+		}, 0);
 		lib.log(`command`, `${a.username}#${a.discriminator}: ${msg.content} - Failed | ${canUse}`);
 	}
 });
@@ -107,8 +116,9 @@ bot.on(`ready`, () => {
 });
 
 // Log the bot in
-bot.login(config.botToken).then((result) => {
-	lib.log(`def`, `Connected`);
-}, (err) => {
-	lib.log(`error`, err);
-});
+bot.login(config.botToken)
+	.then((result) => {
+		lib.log(`def`, `Connected`);
+	}, (err) => {
+		lib.log(`error`, err);
+	});

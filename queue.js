@@ -13,7 +13,9 @@ var queue = {
 			fs.access(file, err => {
 				if (err) {
 					// get some audio from some metadata
-					let video = ytdl.downloadFromInfo(queue[id][0], { filter: `audioonly` });
+					let video = ytdl.downloadFromInfo(queue[id][0], {
+						filter: `audioonly`,
+					});
 					let newFile = ``;
 					// pipe the audio into a file
 					video.on(`info`, (data) => {
@@ -44,7 +46,10 @@ var queue = {
 
 	play: (id, bot, file, msg) => {
 		// start playing the audio
-		let stream = bot.voiceConnections.get(id).playFile(file, { volume: queue[`vol${id}`] });
+		let stream = bot.voiceConnections.get(id)
+			.playFile(file, {
+				volume: queue[`vol${id}`],
+			});
 
 		// tell the users what we're playing
 		stream.once(`start`, () => {
