@@ -672,7 +672,7 @@ var commands = {
 		longHelp: `The bot spawns a new instance of itself and kills the original process, restarting the script.`,
 		exe: (bot, msg, ...args) => {
 			process.on(`exit`, code => {
-				spawn(`node`, ['main.js', '--wait']);
+				spawn(`run.bat`, [], { shell: true });
 			});
 
 			// Tell the user they are leaving, destroy the bot's client connection and then kill the node process
