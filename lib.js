@@ -1,7 +1,7 @@
 module.exports = {
-	//message sending with auto delete
+	// message sending with auto delete
 	send: (channel, msg, options, life) => {
-		if (typeof(options) === `number`) {
+		if (typeof options === `number`) {
 			life = options;
 			options = {};
 		}
@@ -18,26 +18,29 @@ module.exports = {
 		let fullMsg = ``;
 		switch (type) {
 			case `music`:
-				fullMsg += `[Music]`
+				fullMsg += `[Music]`;
 				break;
 			case `command`:
-				fullMsg += `[Command]`
+				fullMsg += `[Command]`;
 				break;
 			case `error`:
-				fullMsg += `[Error]`
+				fullMsg += `[Error]`;
 				break;
 			default:
-				fullMsg += `[Generic]`
+				fullMsg += `[Generic]`;
 		}
 		let d = new Date();
 		fullMsg += ` (${d.getHours}:${d.getMinutes}) ${msg}`;
 		console.log(fullMsg);
 	},
 
-	//do two arrays share any values
+	// do two arrays share any values
+	// Stolen code shhhh
+	/* eslint-disable */
 	arrShare: (target, search) => {
 		return search.some(function(v) {
 			return target.indexOf(v) >= 0;
 		});
 	}
+	/* eslint-enable */
 };

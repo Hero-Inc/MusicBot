@@ -1,18 +1,22 @@
 module.exports = {
-	admin: { //Full access
+	// Full access
+	admin: {
 		users: [],
-		roles: []
+		roles: [],
 	},
-	default: { //Commands that everyone can use except those who are blacklisted
-		commands: [`ping`, `foo`, `help`, `queue`, `tag`, `groups`, `roll`, `taglist`, `np`, `echo`, `clever`]
+	// Commands that everyone can use except those who are blacklisted
+	default: {
+		commands: [`ping`, `foo`, `help`, `queue`, `tag`, `groups`, `roll`, `taglist`, `np`, `echo`, `clever`],
 	},
-	blacklist: { //Can use no commands
+	// Can use no commands
+	blacklist: {
 		users: [],
-		roles: []
+		roles: [],
 	},
-	dj: { //Can use all music based commands
+	// Can use all music based commands
+	dj: {
 		commands: [`summon`, `play`, `pause`, `resume`, `skip`, `clear`, `remove`, `volume`, `move`, `shuffle`],
 		users: [],
-		roles: []
-	}
+		roles: [],
+	},
 };
