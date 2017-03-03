@@ -5,6 +5,7 @@ const ytdl = require(`ytdl-core`);
 const google = require(`googleapis`);
 const lib = require(`./lib.js`);
 const Clever = require(`cleverbot-node`);
+const spawn = require(`child_process`).spawn;
 
 var permissions = require(`./permissions.js`);
 
@@ -652,6 +653,30 @@ var commands = {
 		exe: (bot, msg, ...args) => {
 			// Tell the user they are leaving, destroy the bot's client connection and then kill the node process
 			lib.send(msg.channel, `:wave:`, 5000)
+			.done(() => {
+				bot.destroy().then(() => {
+					process.exit();
+				});
+			}).catch(err => {
+				lib.log(`error`, `Issue with standard shutdown: ${err}`);
+				process.exit(1);
+			});
+		},
+	},
+
+	restart: {
+		voice: false,
+		deleteInvoking: true,
+		use: `restart`,
+		shortHelp: `Restart the bot`,
+		longHelp: `The bot spawns a new instance of itself and kills the original process, restarting the script.`,
+		exe: (bot, msg, ...args) => {
+			process.on(`exit`, code => {
+				spawn(`node`, ['main.js', '--wait']);
+			});
+
+			// Tell the user they are leaving, destroy the bot's client connection and then kill the node process
+			lib.send(msg.channel, `:recycle:`, 2000)
 			.done(() => {
 				bot.destroy().then(() => {
 					process.exit();

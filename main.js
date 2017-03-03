@@ -115,11 +115,15 @@ bot.on(`ready`, () => {
 	lib.log(`def`, `Bot Started`);
 });
 
-// Log the bot in
-bot.login(config.botToken)
-	.then((result) => {
-		lib.log(`def`, `Connected`);
-	})
-	.catch((err) => {
-		lib.log(`error`, err);
-	});
+let time = process.argv.includes(`--wait`) ? 5000 : 0;
+
+setTimeout(() => {
+	// Log the bot in
+	bot.login(config.botToken)
+		.then((result) => {
+			lib.log(`def`, `Connected`);
+		})
+		.catch((err) => {
+			lib.log(`error`, err);
+		});
+}, time);
