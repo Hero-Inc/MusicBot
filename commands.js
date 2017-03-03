@@ -651,9 +651,15 @@ var commands = {
 		longHelp: `Disconnects the bot from all servers and ends the bots proccess.\nIt will need to be restarted manually.`,
 		exe: (bot, msg, ...args) => {
 			// Tell the user they are leaving, destroy the bot's client connection and then kill the node process
-			lib.send(msg.channel, `:wave:`, 5000);
-			bot.destroy();
-			process.exit();
+			lib.send(msg.channel, `:wave:`, 5000)
+			.done(() => {
+				bot.destroy().then(() => {
+					process.exit();
+				});
+			}).catch(err => {
+				lib.log(`error`, `Issue with standard shutdown: ${err}`);
+				process.exit(1);
+			});
 		},
 	},
 

@@ -5,7 +5,7 @@ module.exports = {
 			life = options;
 			options = {};
 		}
-		channel.send(msg, options)
+		return channel.send(msg, options)
 			.then(message => {
 				if (life > 0) {
 					message.delete(life);
