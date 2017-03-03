@@ -32,7 +32,7 @@ module.exports = {
 				fullMsg += `[Generic]`;
 		}
 		let d = new Date();
-		fullMsg += ` (${d.getHours}:${d.getMinutes}) ${msg}`;
+		fullMsg += ` (${d.getHours()}:${d.getMinutes()}) ${msg}`;
 		console.log(fullMsg);
 	},
 
