@@ -48,7 +48,7 @@ function getAllIds(plid, token, idList, cb) {
 				idList.push(element.contentDetails.videoId);
 			});
 			if (results.nextPageToken !== undefined) {
-				return getAllIds(plid, results.nextPageToken, idList, cb);
+				getAllIds(plid, results.nextPageToken, idList, cb);
 			} else {
 				return cb(null, idList);
 			}
