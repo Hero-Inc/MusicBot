@@ -346,8 +346,10 @@ var commands = {
 						{
 							// Get the search string
 							let search = args;
+							// Remove the command
 							search.splice(0, 1);
-							if (search.include(`--playnext`)) {
+							// Remove the playnext flag
+							if (playNext) {
 								search.splice(search.indexOf(`--playnext`), 1);
 							}
 							search = search.join(` `);
@@ -555,8 +557,8 @@ var commands = {
 				let end = args[2] === undefined ? queue[id].length - 1 : Number(args[2]);
 
 				// Make sure that the numbers are correct and clear the queue
-				if (start > 0 && start < end && end > 0 && end < queue[id].length) {
-					queue[id].splice(start, end - start);
+				if (start > 0 && start <= end && end > 0 && end < queue[id].length) {
+					queue[id].splice(start, end - start + 1);
 					msg.channel.lib.send(`Queue Cleared`);
 				} else {
 					lib.send(msg.channel, `Please enter valid start/end numbers`, 5000);
@@ -628,18 +630,21 @@ var commands = {
 			let id = msg.channel.guild.id;
 
 			if (queue[id].length > 2) {
-				for (let i = 0; i < queue[id].length; i++) {
-					// That's random enough for me
+				for (let i = queue[id].length - 1; i > 0; i--) {
+					// Knuff Shuffle? This is right. Right?
 					let num = Math.floor(Math.random() * ((queue[id].length - 1)) + 1);
+					// Save the value in a temp variable
 					let hold = queue[id][i];
 
+					// Remove the value
 					queue[id].splice(i, 1);
 
+					// Add value back in at the random spot
 					queue[id].splice(num, 0, hold);
 				}
 				lib.send(msg.channel, `Shuffled`, 5000);
 			} else {
-				lib.send(msg.channel, `There is not enough items to shuffle in the queue`, 8000);
+				lib.send(msg.channel, `There are not enough items to shuffle in the queue`, 8000);
 			}
 		},
 	},
@@ -967,6 +972,7 @@ var commands = {
 				});
 			lib.send(msg.channel, compMsg, {
 				code: true,
+				split: true,
 			}, 0);
 		},
 	},
