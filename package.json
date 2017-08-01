@@ -1,37 +1,19 @@
 {
-  "name": "Neo-Bot",
+  "name": "hero-musicbot",
   "version": "1.0.0",
-  "description": "A simple Discord Bot",
-  "main": "main.js",
-  "dependencies": {
-    "bufferutil": "^2.0.1",
-    "cleverbot-node": "^0.3.3",
-    "discord.js": "^11.0.0",
-    "erlpack": "github:hammerandchisel/erlpack",
-    "googleapis": "^16.1.0",
-    "node-opus": "^0.2.0",
-    "sodium": "^2.0.1",
-    "ytdl-core": "^0.8.0"
-  },
-  "devDependencies": {
-    "opusscript": "^0.0.1"
-  },
+  "description": "A music bot for discord",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Heroj04/Neo.git"
+  },
+  "author": "Jack Footner",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/Heroj04/Neo/issues"
   },
-  "homepage": "https://github.com/Heroj04/Neo",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Heroj04/Neo.git"
-  },
-  "keywords": [
-    "discord",
-    "bot",
-    "music"
-  ],
-  "author": "Heroj04 (jackrfootner@gmail.com)",
-  "license": "ISC"
+  "homepage": "https://github.com/Heroj04/Neo#readme"
 }

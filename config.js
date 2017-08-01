@@ -2,9 +2,6 @@ module.exports = {
 
 	// The secret token the bot uses to login
 	botToken: ``,
-	// The name the bot will show unless a custom nickname has been set on a server
-	botName: `Neo`,
-	// To change the avatar of the bot, simply edit the avatar.png file
 
 	// The maximum length video a user can play in minutes
 	maxVideoLength: 10800,
@@ -18,12 +15,30 @@ module.exports = {
 	// The ID of the bot's owner, they have full access
 	ownerID: ``,
 
-	// The time in milliseconds before a command invoking message is deleted
-	deleteInvokingTime: 5000,
-
-	// The API Key to use cleverbot Make a free one here (www.cleverbot.com/api)
-	cleverBotAPIKey: ``,
-
 	// The API key to use google api services
 	googleAPIKey: ``,
+
+	// The link sent when the 'GetLink' command is used
+	inviteLink: 'www.example.com/invite?id=092735472813',
+
+	// The URL for the mongoDB database to use
+	connectionString: 'mongodb://localhost:27017/MrHeroBots',
+
+	// The level of debug messages to show in the console
+	consoleDebugLevel: 'info',
+
+	// The level of debug messages shown in the log file
+	fileDebugLevel: 'debug',
+
+	// IDs of users who have admin permissions
+	adminUsers: [
+		'12345678',
+		'09876556',
+	],
+
+	// IDs of roles who have admin permissions
+	admonRoles: [
+		'67929844',
+		'09375322',
+	],
 };
