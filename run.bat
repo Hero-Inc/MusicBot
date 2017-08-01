@@ -1,3 +1,3 @@
 @echo off
-node main.js
-pause
+node main.js --wait
+sleep 30
