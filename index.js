@@ -218,7 +218,12 @@ function initialise() {
 	});
 	log.debug('Registering commands');
 	for (let i = 0; i < commands.length; i++) {
-		bot.registerCommand(commands[i][0], commands[i][1], commands[i][2]);
+		let cmd = bot.registerCommand(commands[i][0], commands[i][1], commands[i][2]);
+		if (commands[i][3]) {
+			for (let j = 0; j < commands.length; j++) {
+				cmd.registerSubCommand(commands[i][3][j][0], commands[i][3][j][1], commands[i][3][j][2]);
+			}
+		}
 	}
 	log.debug('Connecting to Discord.');
 	bot.connect();
