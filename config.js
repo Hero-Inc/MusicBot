@@ -3,7 +3,7 @@ module.exports = {
 	// The secret token the bot uses to login
 	botToken: ``,
 
-	// The maximum length video a user can play in minutes
+	// The maximum length video a user can play in seconds
 	maxVideoLength: 10800,
 
 	// The default percentage volume

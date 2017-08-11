@@ -2,11 +2,49 @@
 const Discord = require('eris');
 const Mongo = require('mongodb');
 const Winston = require('winston');
+const ytdl = require('ytdl-core');
+const Google = require('googleapis');
 
 var config = require('./config.js');
+const youtube = Google.youtube({
+	version: 'v3',
+	auth: config.googleAPIKey,
+});
 
 // guildID as property, array of videoIDs as value
-var queue = {};
+var queue = {
+	add: (link, guild, txtChannel, when) => {
+		ytdl.getInfo(link, (err, info) => {
+			if (err) {
+				log.error('Issue getting video metadata', { URL: link, ReportedError: err });
+				return bot.createMessage(txtChannel, `[ERROR] \`Issue retrieving metadata for video ${link}\``);
+			}
+			if (queue[guild].length === 0) {
+				queue[guild].push(info);
+				queue.next(guild);
+			} else if (!when) {
+				queue[guild].push(info);
+			} else if (when === 'now') {
+				queue[guild].splice(0, 1, info);
+				queue.next(guild);
+			} else {
+				queue[guild].splice(1, 0, info);
+			}
+		});
+	},
+	next: (guild) => {
+		let conn = bot.voiceConnections.get(guild);
+		conn.play(`www.youtube.com/watch?v=${queue[guild][0].video_id}`, { inlineVolume: true });
+		conn.once('end', () => {
+			queue[guild].splice(0, 1);
+			if (queue[guild].length >= 1) {
+				queue.next(guild);
+			} else {
+				conn.disconnect();
+			}
+		});
+	},
+};
 
 // Setup winston logging
 var log = new Winston.Logger({
@@ -29,6 +67,38 @@ var db;
 // Make the owner an admin
 log.debug('Adding owner to adminUsers');
 config.adminUsers.push(config.ownerID);
+
+function getAllIds(plid, token, idList, cb) {
+	if (typeof idList === `function`) {
+		cb = idList;
+		idList = [];
+	}
+	if (typeof token === `function`) {
+		cb = token;
+		idList = [];
+		token = null;
+	}
+	youtube.playlistItems.list({
+		part: `contentDetails`,
+		playlistId: plid,
+		pageToken: token,
+		maxResults: 50,
+		fields: `items/contentDetails/videoId`,
+	}, (err, results) => {
+		if (err) {
+			return cb(err, null);
+		} else {
+			results.items.forEach(element => {
+				idList.push(element.contentDetails.videoId);
+			});
+			if (results.nextPageToken !== undefined) {
+				getAllIds(plid, results.nextPageToken, idList, cb);
+			} else {
+				return cb(null, idList);
+			}
+		}
+	});
+}
 
 log.debug('Creating commands array');
 var commands = [
@@ -113,27 +183,6 @@ var commands = [
 		},
 	],
 	[
-		'Summon',
-		(msg, args) => {
-			if (msg.member.voiceState.channelID) {
-				bot.joinVoiceChannel(msg.member.voiceState.channelID).then((err, conn) => {
-					if (err) {
-						bot.createMessage('[ERROR] `Failed to join voice channel`');
-						log.error('Failed to join voice channel', { ReportedError: err });
-					}
-				});
-			} else {
-				return 'You must be in a voice channel to use this command';
-			}
-		},
-		{
-			aliases: ['Voice', 'Join', 'JoinVoice', 'JoinChannel', 'Connect'],
-			description: 'Summon the bot to your channel',
-			fullDescription: 'Make the bot join the voice channel you are currently connected to.',
-			guildOnly: true,
-		},
-	],
-	[
 		'Disconnect',
 		(msg, args) => {
 			bot.voiceConnections.leave(msg.channel.guild.id);
@@ -142,6 +191,76 @@ var commands = [
 			aliases: ['Leave', 'UnJoin', 'Quit'],
 			description: 'Make the bot leave the channel',
 			fullDescription: 'Cause the bot to disconnect from the current voice channel',
+			guildOnly: true,
+		},
+	],
+	[
+		'Play',
+		(msg, args) => {
+			if (msg.member.voiceState.channelID) {
+				bot.joinVoiceChannel(msg.member.voiceState.channelID).then((err, conn) => {
+					if (err) {
+						bot.createMessage('[ERROR] `Failed to join voice channel`');
+						log.error('Failed to join voice channel', { ReportedError: err });
+					}
+					let when,
+						full = args.join(' ')
+							.toLowerCase()
+							.split(' ');
+					// Determine where to add the items
+					if (full.includes('--playnext')) {
+						when = 'next';
+						full.splice(full.indexOf('--playnext'));
+					}
+					if (full.includes('--playnow')) {
+						when = 'now';
+						full.splice(full.indexOf('--playnow'));
+					}
+					// vid, list or search
+					if (full.includes('?v=')) {
+						// Its a video
+						queue.add(full[0], msg.channel.guild.id, msg.channel.id, when);
+					} else if (full.includes('?list=')) {
+						// Its a playlist
+						getAllIds(full.substring(full.indexOf('?list=') + 6), (e, IDList) => {
+							if (e) {
+								log.error('Issue retrieving playlist data', { ReportedError: e });
+								return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving playlist data\``);
+							}
+							queue.add(IDList[0], msg.channel.guild.id, msg.channel.id, when);
+							if (when === 'now') {
+								when = 'next';
+							}
+							for (let i = 0; i < IDList.length; i++) {
+								queue.add(IDList[i], msg.channel.guild.id, msg.channel.id, when);
+							}
+						});
+					} else {
+						// Its a search string
+						youtube.search({
+							part: `snippet`,
+							maxResults: 1,
+							q: full.join(' '),
+							fields: `items/id/videoId`,
+						}, (e, results) => {
+							if (e) {
+								log.error('Issue searching youtube for video', { ReportedError: e });
+								return bot.createMessage(msg.channel.id, `[ERROR] \`Issue searching youtube for video\``);
+							}
+							queue.add(`www.youtube.com/watch?v=${results.items[0].id.videoId}`, msg.channel.guild.id, msg.channel.id, when);
+						});
+					}
+				});
+			} else {
+				return 'You must be in a voice channel to use this command';
+			}
+		},
+		{
+			aliases: ['Add', 'Song', 'NewSong', 'AddToQueue', '+queue', 'qa'],
+			description: 'Add a new song to the queue',
+			fullDescription: 'Cause the bot to disconnect from the current voice channel',
+			usage: 'Play <URL|SearchString> [--PlayNext | --PlayNow]',
+			argsRequired: true,
 			guildOnly: true,
 		},
 	],
