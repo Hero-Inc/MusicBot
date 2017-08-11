@@ -227,12 +227,12 @@ var commands = [
 								log.error('Issue retrieving playlist data', { ReportedError: e });
 								return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving playlist data\``);
 							}
-							queue.add(IDList[0], msg.channel.guild.id, msg.channel.id, when);
+							queue.add(`www.youtube.com/watch?v=${IDList[0]}`, msg.channel.guild.id, msg.channel.id, when);
 							if (when === 'now') {
 								when = 'next';
 							}
-							for (let i = 0; i < IDList.length; i++) {
-								queue.add(IDList[i], msg.channel.guild.id, msg.channel.id, when);
+							for (let i = 1; i < IDList.length; i++) {
+								queue.add(`www.youtube.com/watch?v=${IDList[i]}`, msg.channel.guild.id, msg.channel.id, when);
 							}
 						});
 					} else {
