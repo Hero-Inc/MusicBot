@@ -264,6 +264,22 @@ var commands = [
 			guildOnly: true,
 		},
 	],
+	[
+		'NowPlaying',
+		(msg, args) => {
+			if (queue[msg.channel.guild.id].length > 0) {
+				return `*Now Playing* \`${queue[msg.channel.guild.id][0].title}\``;
+			} else {
+				return 'Nothing is currently being played';
+			}
+		},
+		{
+			aliases: ['NP', 'Now', 'WhatsOn'],
+			description: 'See what song is playing',
+			fullDescription: 'Display the title of the current video being played by the bot',
+			guildOnly: true,
+		},
+	],
 ];
 
 log.debug('Creating bot');
