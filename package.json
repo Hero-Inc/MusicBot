@@ -1,19 +1,20 @@
 {
   "name": "hero-musicbot",
-  "version": "1.0.0",
+  "version": "2.0.0-alpha1",
   "description": "A music bot for discord",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Heroj04/Neo.git"
+    "url": "git+https://github.com/MrHeroBots/musicBot.git"
   },
   "author": "Jack Footner",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Heroj04/Neo/issues"
+    "url": "https://github.com/MrHeroBots/musicBot/issues"
   },
-  "homepage": "https://github.com/Heroj04/Neo#readme"
+  "homepage": "https://github.com/MrHeroBots/musicBot#readme"
 }

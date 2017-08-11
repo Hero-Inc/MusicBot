@@ -5,6 +5,9 @@ const Winston = require('winston');
 
 var config = require('./config.js');
 
+// guildID as property, array of videoIDs as value
+var queue = {};
+
 // Setup winston logging
 var log = new Winston.Logger({
 	transports: [
@@ -39,13 +42,17 @@ var commands = [
 	[
 		'SetPrefix',
 		(msg, args) => {
-			if (args.length === 1) {
+			if (args.length <= 1) {
+				let prefix = '@mention';
+				if (args.length === 1) {
+					prefix = args[0];
+				}
 				db.collection('guildData')
 					.update({
 						_id: msg.channel.guild.id,
 					}, {
 						$set: {
-							prefix: args[0],
+							prefix: prefix,
 						},
 					}, {
 						upsert: true,
@@ -57,8 +64,9 @@ var commands = [
 							});
 							bot.createMessage(msg.channel.id, 'There was an error saving settings for this guild.');
 						} else {
+							bot.registerGuildPrefix(msg.channel.id, prefix);
 							log.debug(`Succesfully set bot prefix for guildID ${msg.channel.guild.id}`);
-							bot.createMessage(msg.channel.id, `Succesfully set command prefix to ${args[0]}`);
+							bot.createMessage(msg.channel.id, `Succesfully set command prefix to ${prefix}`);
 						}
 					});
 			} else {
@@ -72,7 +80,6 @@ var commands = [
 			fullDescription: 'Sets the prefix used before commands for this bot, only on this guild.',
 			usage: 'SetPrefix <prefix>',
 			guildOnly: true,
-			argsRequired: true,
 			requirements: {
 				permissions: {
 					administrator: true,
@@ -103,6 +110,39 @@ var commands = [
 			requirements: {
 				userIDs: [config.botOwner],
 			},
+		},
+	],
+	[
+		'Summon',
+		(msg, args) => {
+			if (msg.member.voiceState.channelID) {
+				bot.joinVoiceChannel(msg.member.voiceState.channelID).then((err, conn) => {
+					if (err) {
+						bot.createMessage('[ERROR] `Failed to join voice channel`');
+						log.error('Failed to join voice channel', { ReportedError: err });
+					}
+				});
+			} else {
+				return 'You must be in a voice channel to use this command';
+			}
+		},
+		{
+			aliases: ['Voice', 'Join', 'JoinVoice', 'JoinChannel', 'Connect'],
+			description: 'Summon the bot to your channel',
+			fullDescription: 'Make the bot join the voice channel you are currently connected to.',
+			guildOnly: true,
+		},
+	],
+	[
+		'Disconnect',
+		(msg, args) => {
+			bot.voiceConnections.leave(msg.channel.guild.id);
+		},
+		{
+			aliases: ['Leave', 'UnJoin', 'Quit'],
+			description: 'Make the bot leave the channel',
+			fullDescription: 'Cause the bot to disconnect from the current voice channel',
+			guildOnly: true,
 		},
 	],
 ];
