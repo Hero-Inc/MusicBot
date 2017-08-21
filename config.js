@@ -7,7 +7,7 @@ module.exports = {
 	maxVideoLength: 10800,
 
 	// The default percentage volume
-	defaultVolume: 25,
+	defaultVolume: 0.25,
 
 	// The character placed before commands
 	cmdPrefix: `>`,

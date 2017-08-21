@@ -2,8 +2,9 @@
 const Discord = require('eris');
 const Mongo = require('mongodb');
 const Winston = require('winston');
-const ytdl = require('ytdl-core');
 const Google = require('googleapis');
+
+const Queue = require(`./lib/queue.js`);
 
 var config = require('./config.js');
 const youtube = Google.youtube({
@@ -11,43 +12,7 @@ const youtube = Google.youtube({
 	auth: config.googleAPIKey,
 });
 
-// guildID as property, array of videoIDs as value
-var queue = {
-	add: (link, guild, txtChannel, when) => {
-		ytdl.getInfo(link, (err, info) => {
-			if (err) {
-				log.error('Issue getting video metadata', { URL: link, ReportedError: err });
-				return bot.createMessage(txtChannel, `[ERROR] \`Issue retrieving metadata for video ${link}\``);
-			}
-			if (queue[guild].length === 0) {
-				queue[guild].push(info);
-				queue.next(guild);
-			} else if (!when) {
-				queue[guild].push(info);
-			} else if (when === 'now') {
-				queue[guild].splice(0, 1, info);
-				queue.next(guild);
-			} else {
-				queue[guild].splice(1, 0, info);
-			}
-		});
-	},
-	next: (guild) => {
-		let conn = bot.voiceConnections.get(guild);
-		conn.play(`www.youtube.com/watch?v=${queue[guild][0].video_id}`, { inlineVolume: true });
-		if (queue[`vol${guild}`] !== undefined) {
-			conn.setVolume(queue[`vol${guild}`] / 100);
-		}
-		conn.once('end', () => {
-			queue[guild].splice(0, 1);
-			if (queue[guild].length >= 1) {
-				queue.next(guild);
-			} else {
-				conn.disconnect();
-			}
-		});
-	},
-};
+var queues = new Map();
 
 // Setup winston logging
 var log = new Winston.Logger({
@@ -206,37 +171,50 @@ var commands = [
 						bot.createMessage('[ERROR] `Failed to join voice channel`');
 						log.error('Failed to join voice channel', { ReportedError: err });
 					}
-					let when,
+					let next = false,
 						full = args.join(' ')
 							.toLowerCase()
 							.split(' ');
 					// Determine where to add the items
 					if (full.includes('--playnext')) {
-						when = 'next';
+						next = true;
 						full.splice(full.indexOf('--playnext'));
-					}
-					if (full.includes('--playnow')) {
-						when = 'now';
-						full.splice(full.indexOf('--playnow'));
 					}
 					// vid, list or search
 					if (full.includes('?v=')) {
 						// Its a video
-						queue.add(full[0], msg.channel.guild.id, msg.channel.id, when);
+						queues.get(msg.channel.guild.id).addSong(full[0], msg.user.id, next, (e, title) => {
+							if (e) {
+								log.error('Issue getting video metadata', { URL: full[0], ReportedError: e });
+								return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving metadata for video ${full[0]}\``);
+							}
+							bot.createMessage(msg.channel.id, `Added \`${title}\` to the queue`);
+							if (queues.get(msg.channel.guild.id).queue.length === 1) {
+								queues.get(msg.channel.guild.id).play(conn, msg.channel.id, bot.createMessage);
+							}
+						});
 					} else if (full.includes('?list=')) {
 						// Its a playlist
+						bot.createMessage(msg.channel.id, `Processing playlist ...`);
 						getAllIds(full.substring(full.indexOf('?list=') + 6), (e, IDList) => {
 							if (e) {
 								log.error('Issue retrieving playlist data', { ReportedError: e });
 								return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving playlist data\``);
 							}
-							queue.add(`www.youtube.com/watch?v=${IDList[0]}`, msg.channel.guild.id, msg.channel.id, when);
-							if (when === 'now') {
-								when = 'next';
+							for (let i = 0; i < IDList.length; i++) {
+								let url = `www.youtube.com/watch?v=${IDList[i]}`;
+								queues.get(msg.channel.guild.id).addSong(url, msg.user.id, next, (er, title) => {
+									if (er) {
+										log.error('Issue getting video metadata', { URL: url, ReportedError: er });
+										return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving metadata for video ${url}\``);
+									}
+									bot.createMessage(msg.channel.id, `Added \`${title}\` to the queue`);
+								});
+								if (queues.get(msg.channel.guild.id).queue.length === 1) {
+									queues.get(msg.channel.guild.id).play(conn, msg.channel.id, bot.createMessage);
+								}
 							}
-							for (let i = 1; i < IDList.length; i++) {
-								queue.add(`www.youtube.com/watch?v=${IDList[i]}`, msg.channel.guild.id, msg.channel.id, when);
-							}
+							bot.createMessage(msg.channel.id, `Playlist added to queue`);
 						});
 					} else {
 						// Its a search string
@@ -250,7 +228,17 @@ var commands = [
 								log.error('Issue searching youtube for video', { ReportedError: e });
 								return bot.createMessage(msg.channel.id, `[ERROR] \`Issue searching youtube for video\``);
 							}
-							queue.add(`www.youtube.com/watch?v=${results.items[0].id.videoId}`, msg.channel.guild.id, msg.channel.id, when);
+							let url = `www.youtube.com/watch?v=${results.items[0].id.videoId}`;
+							queues.get(msg.channel.guild.id).addSong(url, msg.user.id, next, (er, title) => {
+								if (er) {
+									log.error('Issue getting video metadata', { URL: url, ReportedError: er });
+									return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving metadata for video ${url}\``);
+								}
+								bot.createMessage(msg.channel.id, `Added \`${title}\` to the queue`);
+								if (queues.get(msg.channel.guild.id).queue.length === 1) {
+									queues.get(msg.channel.guild.id).play(conn, msg.channel.id, bot.createMessage);
+								}
+							});
 						});
 					}
 				});
@@ -262,7 +250,7 @@ var commands = [
 			aliases: ['Add', 'Song', 'NewSong', 'AddToQueue', '+queue', 'qa'],
 			description: 'Add a new song to the queue',
 			fullDescription: 'Cause the bot to disconnect from the current voice channel',
-			usage: 'Play <URL|SearchString> [--PlayNext | --PlayNow]',
+			usage: 'Play <VideoURL | PlaylistURL | SearchString> [--PlayNext]',
 			argsRequired: true,
 			guildOnly: true,
 		},
@@ -270,8 +258,9 @@ var commands = [
 	[
 		'NowPlaying',
 		(msg, args) => {
-			if (queue[msg.channel.guild.id].length > 0) {
-				return `*Now Playing* \`${queue[msg.channel.guild.id][0].title}\``;
+			let gqueue = queues.get(msg.channel.guild.id).queue;
+			if (gqueue.length > 0) {
+				return `Now Playing \`${gqueue[0].title}\` requested by ${gqueue.requester}`;
 			} else {
 				return 'Nothing is currently being played';
 			}
@@ -286,40 +275,45 @@ var commands = [
 	[
 		'Volume',
 		(msg, args) => {
-			let vol = parseInt(args[0]);
-			if (args.length === 1 && vol !== undefined && !isNaN(vol) && vol >= 0 && vol <= 100) {
-				db.collection('guildData')
-					.update({
-						_id: msg.channel.guild.id,
-					}, {
-						$set: {
-							volume: vol,
-						},
-					}, {
-						upsert: true,
-					})
-					.then(result => {
-						if (result.writeError) {
-							log.error(`Issue setting bot volume for guildID ${msg.channel.guild.id}`, {
-								ReportedError: result.writeError.errmsg,
-							});
-							bot.createMessage(msg.channel.id, 'There was an error saving settings for this guild.');
-						} else {
-							bot.voiceConnections.get(msg.channel.guild.id).setVolume(vol / 100);
-							queue[`vol${msg.channel.guild.id}`] = vol;
-							log.debug(`Succesfully set bot volume for guildID ${msg.channel.guild.id}`);
-							bot.createMessage(msg.channel.id, `Succesfully set volume to ${vol}%`);
-						}
-					});
+			if (args.length >= 1) {
+				let vol = parseInt(args[0]);
+				if (vol !== undefined && !isNaN(vol) && vol >= 0 && vol <= 100) {
+					vol /= 100;
+					db.collection('guildData')
+						.update({
+							_id: msg.channel.guild.id,
+						}, {
+							$set: {
+								volume: vol,
+							},
+						}, {
+							upsert: true,
+						})
+						.then(result => {
+							if (result.writeError) {
+								log.error(`Issue setting bot volume for guildID ${msg.channel.guild.id}`, {
+									ReportedError: result.writeError.errmsg,
+								});
+								bot.createMessage(msg.channel.id, 'There was an error saving settings for this guild.');
+							} else {
+								bot.voiceConnections.get(msg.channel.guild.id).setVolume(vol);
+								queues.get(msg.channel.guild.id).volume = vol;
+								log.debug(`Succesfully set bot volume for guildID ${msg.channel.guild.id}`);
+								bot.createMessage(msg.channel.id, `Succesfully set volume to ${vol * 100}%`);
+							}
+						});
+				} else {
+					log.debug('Bad Syntax. Volume not set');
+					return 'Please supply a number between 0 and 100 inclusive as the volume percentage';
+				}
 			} else {
-				log.debug('Bad Syntax. Volume not set');
-				return 'Please supply a number between 0 and 100 inclusive as the volume percentage';
+				return `The current volume is ${queues.get(msg.channel.guild.id).strVolume}`;
 			}
 		},
 		{
 			aliases: ['SetVolume', 'SetVol', 'Vol'],
-			description: 'Set the bots speaking volume',
-			fullDescription: 'Sets the volume at which the bot plays music on this guild.',
+			description: 'Set or get the bots speaking volume',
+			fullDescription: 'Sets the volume at which the bot plays music on this guild. If no arguments are provided the current volume is returned.',
 			usage: 'Volume <0-100>',
 			guildOnly: true,
 		},
@@ -364,47 +358,58 @@ bot
 			});
 		}
 	})
+	.on('guildAvailable', guild => {
+		log.debug('Added to new guild, checking for data.');
+		db.collection('guildData')
+			.find({
+				_id: guild.id,
+			})
+			.toArray((err, data) => {
+				if (err) {
+					return log.error(`Failed to retrieve Guild Data from database.`, {
+						ReportedError: err,
+					});
+				}
+				if (data[0] !== undefined) {
+					bot.registerGuildPrefix(guild.id, data[0].prefix === undefined ? config.cmdPrefix : data[0].prefix);
+					queues.set(guild.id, new Queue(guild.id, data[0].volume === undefined ? config.volume : data[0].volume));
+				}
+				log.debug('New guild data retrieved');
+			});
+	})
 	.on('ready', () => {
 		// Set the botPrefix on server that have previously used the SetPrefix command
-		log.debug('Setting guild command prefixes');
-		let prefixes = {};
+		log.debug('Setting up saved guild Data');
+		let guilds = {};
 		db.collection('guildData')
 			.find({
-				prefix: {
-					$ne: null,
-				},
+				$or: [
+					{
+						prefix: {
+							$ne: null,
+						},
+					},
+					{
+						volume: {
+							$ne: null,
+						},
+					},
+				],
 			})
 			.toArray((err, data) => {
 				if (err) {
-					return log.error(`Failed to retrieve Guild Data from database. Prefixes not set.`, {
+					return log.error(`Failed to retrieve Guild Data from database.`, {
 						ReportedError: err,
 					});
 				}
 				for (let i = 0; i < data.length; i++) {
-					prefixes[data._id] = data[i].prefix;
+					guilds[data._id] = data[i];
 				}
 				bot.guilds.forEach((guild) => {
-					bot.registerGuildPrefix(guild.id, prefixes[guild.id] !== undefined ? prefixes[guild.id] : config.cmdPrefix);
+					bot.registerGuildPrefix(guild.id, guilds[guild.id] === undefined || guilds[guild.id].prefix === undefined ? config.cmdPrefix : guilds[guild.id].prefix);
+					queues.set(guild.id, new Queue(guild.id, guilds[guild.id] === undefined || guilds[guild.id].volume === undefined ? config.volume : guilds[guild.id].volume));
 				});
-				log.debug('Prefixes set');
-			});
-		log.debug('Setting guild volumes');
-		db.collection('guildData')
-			.find({
-				volume: {
-					$ne: null,
-				},
-			})
-			.toArray((err, data) => {
-				if (err) {
-					return log.error(`Failed to retrieve Guild Data from database. volumes not set.`, {
-						ReportedError: err,
-					});
-				}
-				for (let i = 0; i < data.length; i++) {
-					queue[`vol${data[i]._id}`] = data[i].prefix;
-				}
-				log.debug('Prefixes set');
+				log.debug('Guild data retrieved set');
 			});
 		log.info('Bot ready');
 	});
@@ -426,6 +431,7 @@ function initialise() {
 			}
 		}
 	}
+	commands = null;
 	log.debug('Connecting to Discord.');
 	bot.connect();
 }
