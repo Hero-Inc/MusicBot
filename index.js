@@ -318,6 +318,16 @@ var commands = [
 			guildOnly: true,
 		},
 	],
+	[
+		'Queue',
+		(msg, args) => queues.get(msg.channel.guild.id).songList(),
+		{
+			aliases: ['SongList', 'ListSongs', 'Songs', 'WhatsNext'],
+			description: 'See what songs are coming up',
+			fullDescription: 'Show a list of the currently playing song and the next 10 songs in the queue after it.',
+			guildOnly: true,
+		},
+	],
 ];
 
 log.debug('Creating bot');
