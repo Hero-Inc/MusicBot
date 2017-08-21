@@ -35,6 +35,9 @@ var queue = {
 	next: (guild) => {
 		let conn = bot.voiceConnections.get(guild);
 		conn.play(`www.youtube.com/watch?v=${queue[guild][0].video_id}`, { inlineVolume: true });
+		if (queue[`vol${guild}`] !== undefined) {
+			conn.setVolume(queue[`vol${guild}`] / 100);
+		}
 		conn.once('end', () => {
 			queue[guild].splice(0, 1);
 			if (queue[guild].length >= 1) {
@@ -303,6 +306,7 @@ var commands = [
 							bot.createMessage(msg.channel.id, 'There was an error saving settings for this guild.');
 						} else {
 							bot.voiceConnections.get(msg.channel.guild.id).setVolume(vol / 100);
+							queue[`vol${msg.channel.guild.id}`] = vol;
 							log.debug(`Succesfully set bot volume for guildID ${msg.channel.guild.id}`);
 							bot.createMessage(msg.channel.id, `Succesfully set volume to ${vol}%`);
 						}
@@ -377,6 +381,24 @@ bot
 				}
 				for (let i = 0; i < data.length; i++) {
 					bot.registerGuildPrefix(data[i]._id, data[i].prefix);
+				}
+				log.debug('Prefixes set');
+			});
+		log.debug('Setting guild volumes');
+		db.collection('guildData')
+			.find({
+				volume: {
+					$ne: null,
+				},
+			})
+			.toArray((err, data) => {
+				if (err) {
+					return log.error(`Failed to retrieve Guild Data from database. volumes not set.`, {
+						ReportedError: err,
+					});
+				}
+				for (let i = 0; i < data.length; i++) {
+					queue[`vol${data[i]._id}`] = data[i].prefix;
 				}
 				log.debug('Prefixes set');
 			});
