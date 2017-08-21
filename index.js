@@ -134,7 +134,7 @@ var commands = [
 							});
 							bot.createMessage(msg.channel.id, 'There was an error saving settings for this guild.');
 						} else {
-							bot.registerGuildPrefix(msg.channel.id, prefix);
+							bot.registerGuildPrefix(msg.channel.guild.id, prefix);
 							log.debug(`Succesfully set bot prefix for guildID ${msg.channel.guild.id}`);
 							bot.createMessage(msg.channel.id, `Succesfully set command prefix to ${prefix}`);
 						}
@@ -277,6 +277,46 @@ var commands = [
 			aliases: ['NP', 'Now', 'WhatsOn'],
 			description: 'See what song is playing',
 			fullDescription: 'Display the title of the current video being played by the bot',
+			guildOnly: true,
+		},
+	],
+	[
+		'Volume',
+		(msg, args) => {
+			let vol = parseInt(args[0]);
+			if (args.length === 1 && vol !== undefined && vol >= 0 && vol <= 100) {
+				db.collection('guildData')
+					.update({
+						_id: msg.channel.guild.id,
+					}, {
+						$set: {
+							volume: vol,
+						},
+					}, {
+						upsert: true,
+					})
+					.then(result => {
+						if (result.writeError) {
+							log.error(`Issue setting bot volume for guildID ${msg.channel.guild.id}`, {
+								ReportedError: result.writeError.errmsg,
+							});
+							bot.createMessage(msg.channel.id, 'There was an error saving settings for this guild.');
+						} else {
+							bot.voiceConnections.get(msg.channel.guild.id).setVolume(vol / 100);
+							log.debug(`Succesfully set bot volume for guildID ${msg.channel.guild.id}`);
+							bot.createMessage(msg.channel.id, `Succesfully set volume to ${vol}%`);
+						}
+					});
+			} else {
+				log.debug('Bad Syntax. Volume not set');
+				return 'Please supply a number between 0 and 100 inclusive as the volume percentage';
+			}
+		},
+		{
+			aliases: ['SetVolume', 'SetVol', 'Vol'],
+			description: 'Set the bots speaking volume',
+			fullDescription: 'Sets the volume at which the bot plays music on this guild.',
+			usage: 'Volume <0-100>',
 			guildOnly: true,
 		},
 	],
