@@ -284,7 +284,7 @@ var commands = [
 		'Volume',
 		(msg, args) => {
 			let vol = parseInt(args[0]);
-			if (args.length === 1 && vol !== undefined && vol >= 0 && vol <= 100) {
+			if (args.length === 1 && vol !== undefined && !isNaN(vol) && vol >= 0 && vol <= 100) {
 				db.collection('guildData')
 					.update({
 						_id: msg.channel.guild.id,
