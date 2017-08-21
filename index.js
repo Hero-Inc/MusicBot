@@ -116,7 +116,7 @@ var commands = [
 		'SetPrefix',
 		(msg, args) => {
 			if (args.length <= 1) {
-				let prefix = '@mention';
+				let prefix = null;
 				if (args.length === 1) {
 					prefix = args[0];
 				}
@@ -137,9 +137,9 @@ var commands = [
 							});
 							bot.createMessage(msg.channel.id, 'There was an error saving settings for this guild.');
 						} else {
-							bot.registerGuildPrefix(msg.channel.guild.id, prefix);
+							bot.registerGuildPrefix(msg.channel.guild.id, prefix === null ? config.cmdPrefix : prefix);
 							log.debug(`Succesfully set bot prefix for guildID ${msg.channel.guild.id}`);
-							bot.createMessage(msg.channel.id, `Succesfully set command prefix to ${prefix}`);
+							bot.createMessage(msg.channel.id, `Succesfully set command prefix to ${prefix === null ? config.cmdPrefix : prefix}`);
 						}
 					});
 			} else {
@@ -150,7 +150,7 @@ var commands = [
 		{
 			aliases: ['Prefix', 'cmdPrefix', '~'],
 			description: 'Set the command prefix',
-			fullDescription: 'Sets the prefix used before commands for this bot, only on this guild.',
+			fullDescription: 'Sets the prefix used before commands for this bot, only on this guild.\n Set it to "@mention" to use the bots mention as the prefix. e.g., "@musicBot Help"',
 			usage: 'SetPrefix <prefix>',
 			guildOnly: true,
 			requirements: {
@@ -367,6 +367,7 @@ bot
 	.on('ready', () => {
 		// Set the botPrefix on server that have previously used the SetPrefix command
 		log.debug('Setting guild command prefixes');
+		let prefixes = {};
 		db.collection('guildData')
 			.find({
 				prefix: {
@@ -380,8 +381,11 @@ bot
 					});
 				}
 				for (let i = 0; i < data.length; i++) {
-					bot.registerGuildPrefix(data[i]._id, data[i].prefix);
+					prefixes[data._id] = data[i].prefix;
 				}
+				bot.guilds.forEach((guild) => {
+					bot.registerGuildPrefix(guild.id, prefixes[guild.id] !== undefined ? prefixes[guild.id] : config.cmdPrefix);
+				});
 				log.debug('Prefixes set');
 			});
 		log.debug('Setting guild volumes');
