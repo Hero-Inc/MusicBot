@@ -137,9 +137,10 @@ var commands = [
 	[
 		'Shutdown',
 		(msg, args) => {
-			bot.createMessage(msg.channel.id, 'Shutting down, bye.').then(() => {
-				process.kill(process.pid, 'SIGINT');
-			});
+			bot.createMessage(msg.channel.id, 'Shutting down, bye.')
+				.then(() => {
+					process.kill(process.pid, 'SIGINT');
+				});
 		},
 		{
 			aliases: ['kill', 'x-x'],
@@ -166,82 +167,107 @@ var commands = [
 		'Play',
 		(msg, args) => {
 			if (msg.member.voiceState.channelID) {
-				bot.joinVoiceChannel(msg.member.voiceState.channelID).then((err, conn) => {
-					if (err) {
-						bot.createMessage('[ERROR] `Failed to join voice channel`');
-						log.error('Failed to join voice channel', { ReportedError: err });
-					}
-					let next = false,
-						full = args.join(' ')
+				bot.joinVoiceChannel(msg.member.voiceState.channelID)
+					.then((err, conn) => {
+						if (err) {
+							bot.createMessage('[ERROR] `Failed to join voice channel`');
+							log.error('Failed to join voice channel', {
+								ReportedError: err,
+							});
+						}
+						let next = false,
+							full = args.join(' ')
 							.toLowerCase()
 							.split(' ');
-					// Determine where to add the items
-					if (full.includes('--playnext')) {
-						next = true;
-						full.splice(full.indexOf('--playnext'));
-					}
-					// vid, list or search
-					if (full.includes('?v=')) {
-						// Its a video
-						queues.get(msg.channel.guild.id).addSong(full[0], msg.user.id, next, (e, title) => {
-							if (e) {
-								log.error('Issue getting video metadata', { URL: full[0], ReportedError: e });
-								return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving metadata for video ${full[0]}\``);
-							}
-							bot.createMessage(msg.channel.id, `Added \`${title}\` to the queue`);
-							if (queues.get(msg.channel.guild.id).queue.length === 1) {
-								queues.get(msg.channel.guild.id).play(conn, msg.channel.id, bot.createMessage);
-							}
-						});
-					} else if (full.includes('?list=')) {
-						// Its a playlist
-						bot.createMessage(msg.channel.id, `Processing playlist ...`);
-						getAllIds(full.substring(full.indexOf('?list=') + 6), (e, IDList) => {
-							if (e) {
-								log.error('Issue retrieving playlist data', { ReportedError: e });
-								return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving playlist data\``);
-							}
-							for (let i = 0; i < IDList.length; i++) {
-								let url = `www.youtube.com/watch?v=${IDList[i]}`;
-								queues.get(msg.channel.guild.id).addSong(url, msg.user.id, next, (er, title) => {
-									if (er) {
-										log.error('Issue getting video metadata', { URL: url, ReportedError: er });
-										return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving metadata for video ${url}\``);
+						// Determine where to add the items
+						if (full.includes('--playnext')) {
+							next = true;
+							full.splice(full.indexOf('--playnext'));
+						}
+						// vid, list or search
+						if (full.includes('?v=')) {
+							// Its a video
+							queues.get(msg.channel.guild.id)
+								.addSong(full[0], msg.user.id, next, (e, title) => {
+									if (e) {
+										log.error('Issue getting video metadata', {
+											URL: full[0],
+											ReportedError: e,
+										});
+										return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving metadata for video ${full[0]}\``);
 									}
 									bot.createMessage(msg.channel.id, `Added \`${title}\` to the queue`);
+									if (queues.get(msg.channel.guild.id)
+										.queue.length === 1) {
+										queues.get(msg.channel.guild.id)
+											.play(conn, msg.channel.id, bot.createMessage);
+									}
 								});
-								if (queues.get(msg.channel.guild.id).queue.length === 1) {
-									queues.get(msg.channel.guild.id).play(conn, msg.channel.id, bot.createMessage);
+						} else if (full.includes('?list=')) {
+							// Its a playlist
+							bot.createMessage(msg.channel.id, `Processing playlist ...`);
+							getAllIds(full.substring(full.indexOf('?list=') + 6), (e, IDList) => {
+								if (e) {
+									log.error('Issue retrieving playlist data', {
+										ReportedError: e,
+									});
+									return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving playlist data\``);
 								}
-							}
-							bot.createMessage(msg.channel.id, `Playlist added to queue`);
-						});
-					} else {
-						// Its a search string
-						youtube.search({
-							part: `snippet`,
-							maxResults: 1,
-							q: full.join(' '),
-							fields: `items/id/videoId`,
-						}, (e, results) => {
-							if (e) {
-								log.error('Issue searching youtube for video', { ReportedError: e });
-								return bot.createMessage(msg.channel.id, `[ERROR] \`Issue searching youtube for video\``);
-							}
-							let url = `www.youtube.com/watch?v=${results.items[0].id.videoId}`;
-							queues.get(msg.channel.guild.id).addSong(url, msg.user.id, next, (er, title) => {
-								if (er) {
-									log.error('Issue getting video metadata', { URL: url, ReportedError: er });
-									return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving metadata for video ${url}\``);
+								for (let i = 0; i < IDList.length; i++) {
+									let url = `www.youtube.com/watch?v=${IDList[i]}`;
+									queues.get(msg.channel.guild.id)
+										.addSong(url, msg.user.id, next, (er, title) => {
+											if (er) {
+												log.error('Issue getting video metadata', {
+													URL: url,
+													ReportedError: er,
+												});
+												return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving metadata for video ${url}\``);
+											}
+											bot.createMessage(msg.channel.id, `Added \`${title}\` to the queue`);
+										});
+									if (queues.get(msg.channel.guild.id)
+										.queue.length === 1) {
+										queues.get(msg.channel.guild.id)
+											.play(conn, msg.channel.id, bot.createMessage);
+									}
 								}
-								bot.createMessage(msg.channel.id, `Added \`${title}\` to the queue`);
-								if (queues.get(msg.channel.guild.id).queue.length === 1) {
-									queues.get(msg.channel.guild.id).play(conn, msg.channel.id, bot.createMessage);
-								}
+								bot.createMessage(msg.channel.id, `Playlist added to queue`);
 							});
-						});
-					}
-				});
+						} else {
+							// Its a search string
+							youtube.search({
+								part: `snippet`,
+								maxResults: 1,
+								q: full.join(' '),
+								fields: `items/id/videoId`,
+							}, (e, results) => {
+								if (e) {
+									log.error('Issue searching youtube for video', {
+										ReportedError: e,
+									});
+									return bot.createMessage(msg.channel.id, `[ERROR] \`Issue searching youtube for video\``);
+								}
+								let url = `www.youtube.com/watch?v=${results.items[0].id.videoId}`;
+								queues.get(msg.channel.guild.id)
+									.addSong(url, msg.user.id, next, (er, title) => {
+										if (er) {
+											log.error('Issue getting video metadata', {
+												URL: url,
+												ReportedError: er,
+											});
+											return bot.createMessage(msg.channel.id, `[ERROR] \`Issue retrieving metadata for video ${url}\``);
+										}
+										bot.createMessage(msg.channel.id, `Added \`${title}\` to the queue`);
+										if (queues.get(msg.channel.guild.id)
+											.queue.length === 1) {
+											queues.get(msg.channel.guild.id)
+												.play(conn, msg.channel.id, bot.createMessage);
+										}
+									});
+							});
+						}
+					});
 			} else {
 				return 'You must be in a voice channel to use this command';
 			}
@@ -258,7 +284,8 @@ var commands = [
 	[
 		'NowPlaying',
 		(msg, args) => {
-			let gqueue = queues.get(msg.channel.guild.id).queue;
+			let gqueue = queues.get(msg.channel.guild.id)
+				.queue;
 			if (gqueue.length > 0) {
 				return `Now Playing \`${gqueue[0].title}\` requested by ${gqueue.requester}`;
 			} else {
@@ -296,8 +323,10 @@ var commands = [
 								});
 								bot.createMessage(msg.channel.id, 'There was an error saving settings for this guild.');
 							} else {
-								bot.voiceConnections.get(msg.channel.guild.id).setVolume(vol);
-								queues.get(msg.channel.guild.id).volume = vol;
+								bot.voiceConnections.get(msg.channel.guild.id)
+									.setVolume(vol);
+								queues.get(msg.channel.guild.id)
+									.volume = vol;
 								log.debug(`Succesfully set bot volume for guildID ${msg.channel.guild.id}`);
 								bot.createMessage(msg.channel.id, `Succesfully set volume to ${vol * 100}%`);
 							}
@@ -320,7 +349,8 @@ var commands = [
 	],
 	[
 		'Queue',
-		(msg, args) => queues.get(msg.channel.guild.id).songList(),
+		(msg, args) => queues.get(msg.channel.guild.id)
+		.songList(),
 		{
 			aliases: ['SongList', 'ListSongs', 'Songs', 'WhatsNext'],
 			description: 'See what songs are coming up',
