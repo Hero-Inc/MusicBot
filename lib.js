@@ -1,7 +1,7 @@
 module.exports = {
-	//message sending with auto delete
+	// message sending with auto delete
 	send: (channel, msg, options, life) => {
-		if (typeof(options) === `number`) {
+		if (typeof options === `number`) {
 			life = options;
 			options = {};
 		}
@@ -10,11 +10,12 @@ module.exports = {
 				message.delete(life);
 			}
 		}).catch(e => {
-			console.log(`error sending message` + e);
+			console.log(`error sending message: ${e}`);
 		});
 	},
 
-	//do two arrays share any values
+	// do two arrays share any values?
+	// I got this from a stackoverflow question but forgot to grab the link and now I can't find it again
 	arrShare: (target, search) => {
 		return search.some(function(v) {
 			return target.indexOf(v) >= 0;
