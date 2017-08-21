@@ -5,20 +5,18 @@ module.exports = {
 			life = options;
 			options = {};
 		}
-		channel.send(msg, options).then(message => {
-			if (life > 0) {
-				message.delete(life);
-			}
-		}).catch(e => {
-			console.log(`error sending message: ${e}`);
-		});
+		channel.send(msg, options)
+			.then(message => {
+				if (life > 0) {
+					message.delete(life);
+				}
+			})
+			.catch(e => {
+				console.log(`error sending message: ${e}`);
+			});
 	},
 
 	// do two arrays share any values?
 	// I got this from a stackoverflow question but forgot to grab the link and now I can't find it again
-	arrShare: (target, search) => {
-		return search.some(function(v) {
-			return target.indexOf(v) >= 0;
-		});
-	}
+	arrShare: (target, search) => search.some((v) => target.indexOf(v) >= 0),
 };
