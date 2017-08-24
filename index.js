@@ -300,10 +300,70 @@ var commands = [
 		},
 	],
 	[
+		'MaxLength',
+		(msg, args) => {
+			if (args.length >= 1) {
+				let length = parseInt(args[0]);
+				if (args.join(' ')
+					.toLowerCase()
+					.split(' ')
+					.includes('--default')) {
+					length = config.maxLength;
+				}
+				if (length !== undefined && !isNaN(length) && length >= 0 && length <= config.maxLength) {
+					db.collection('guildData')
+						.update({
+							_id: msg.channel.guild.id,
+						}, {
+							$set: {
+								maxLength: length,
+							},
+						}, {
+							upsert: true,
+						})
+						.then(result => {
+							if (result.writeError) {
+								log.error(`Issue setting bot maxLength for guildID ${msg.channel.guild.id}`, {
+									ReportedError: result.writeError.errmsg,
+								});
+								bot.createMessage(msg.channel.id, 'There was an error saving settings for this guild.');
+							} else {
+								queues.get(msg.channel.guild.id)
+									.maxLength = length;
+								log.debug(`Succesfully set bot maxLength for guildID ${msg.channel.guild.id}`);
+								bot.createMessage(msg.channel.id, `Succesfully set max length to ${queues.get(msg.channel.guild.id).strMaxLength}`);
+							}
+						});
+				} else {
+					log.debug('Bad Syntax. Volume not set');
+					return 'Please supply a number in seconds as the maximum song length';
+				}
+			} else {
+				return `The current max length is ${queues.get(msg.channel.guild.id).strMaxLength}`;
+			}
+		},
+		{
+			aliases: ['SetLength', 'SongLength', 'Duration'],
+			description: 'Set or get the bots maximum song length',
+			fullDescription: 'Sets the maximum length a song can be to be played on this guild. If no arguments are provided the current max length is returned.\nUse the "--default" flag to reset the max length to the bot deault.',
+			usage: 'MaxLength [numberOfSeconds] [--default]',
+			guildOnly: true,
+			requirements: {
+				roleIDs: config.adminRoles,
+			},
+		},
+	],
+	[
 		'Volume',
 		(msg, args) => {
 			if (args.length >= 1) {
 				let vol = parseInt(args[0]);
+				if (args.join(' ')
+					.toLowerCase()
+					.split(' ')
+					.includes('--default')) {
+					vol = config.defaultVolume * 100;
+				}
 				if (vol !== undefined && !isNaN(vol) && vol >= 0 && vol <= 100) {
 					vol /= 100;
 					db.collection('guildData')
@@ -342,8 +402,8 @@ var commands = [
 		{
 			aliases: ['SetVolume', 'SetVol', 'Vol'],
 			description: 'Set or get the bots speaking volume',
-			fullDescription: 'Sets the volume at which the bot plays music on this guild. If no arguments are provided the current volume is returned.',
-			usage: 'Volume <0-100>',
+			fullDescription: 'Sets the volume at which the bot plays music on this guild. If no arguments are provided the current volume is returned.\nUse the "--default" flag to reset the volume to the bot deault.',
+			usage: 'Volume [0-100] [--default]',
 			guildOnly: true,
 		},
 	],
@@ -422,20 +482,7 @@ bot
 		log.debug('Setting up saved guild Data');
 		let guilds = {};
 		db.collection('guildData')
-			.find({
-				$or: [
-					{
-						prefix: {
-							$ne: null,
-						},
-					},
-					{
-						volume: {
-							$ne: null,
-						},
-					},
-				],
-			})
+			.find({})
 			.toArray((err, data) => {
 				if (err) {
 					return log.error(`Failed to retrieve Guild Data from database.`, {
@@ -447,7 +494,7 @@ bot
 				}
 				bot.guilds.forEach((guild) => {
 					bot.registerGuildPrefix(guild.id, guilds[guild.id] === undefined || guilds[guild.id].prefix === undefined ? config.cmdPrefix : guilds[guild.id].prefix);
-					queues.set(guild.id, new Queue(guild.id, guilds[guild.id] === undefined || guilds[guild.id].volume === undefined ? config.volume : guilds[guild.id].volume));
+					queues.set(guild.id, new Queue(guild.id, guilds[guild.id] === undefined || guilds[guild.id].volume === undefined ? config.volume : guilds[guild.id].volume, guilds[guild.id] === undefined || guilds[guild.id].maxLength === undefined ? config.maxLength : guilds[guild.id].maxLength));
 				});
 				log.debug('Guild data retrieved set');
 			});
@@ -466,7 +513,7 @@ function initialise() {
 	for (let i = 0; i < commands.length; i++) {
 		let cmd = bot.registerCommand(commands[i][0], commands[i][1], commands[i][2]);
 		if (commands[i][3]) {
-			for (let j = 0; j < commands.length; j++) {
+			for (let j = 0; j < commands[i][3].length; j++) {
 				cmd.registerSubCommand(commands[i][3][j][0], commands[i][3][j][1], commands[i][3][j][2]);
 			}
 		}

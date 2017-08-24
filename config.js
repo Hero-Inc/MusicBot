@@ -3,8 +3,8 @@ module.exports = {
 	// The secret token the bot uses to login
 	botToken: ``,
 
-	// The maximum length video a user can play in seconds
-	maxVideoLength: 10800,
+	// The maximum length song a user can play in seconds
+	maxLength: 10800,
 
 	// The default percentage volume
 	defaultVolume: 0.25,
@@ -37,7 +37,7 @@ module.exports = {
 	],
 
 	// IDs of roles who have admin permissions
-	admonRoles: [
+	adminRoles: [
 		'67929844',
 		'09375322',
 	],
